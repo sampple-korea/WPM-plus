@@ -11,6 +11,10 @@
     <string name="headline_reports">復元レポート</string>
     <string name="action_import">ファイルを取り込む</string>
     <string name="action_paste_qr">QRを貼り付け</string>
+    <string name="action_cancel">キャンセル</string>
+    <string name="action_save">保存</string>
+    <string name="qr_dialog_title">Wi‑Fi QR テキストを貼り付け</string>
+    <string name="qr_dialog_label">QRペイロード</string>
     <string name="action_request_shizuku">Shizukuを有効化</string>
     <string name="action_extract_system">システムから抽出</string>
     <string name="action_restore_selected">選択項目を復元</string>

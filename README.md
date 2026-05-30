@@ -1,5 +1,9 @@
 # Wi-Fi Vault Restore
 
+[![Android](https://github.com/sampple-korea/wifi-vault-restore/actions/workflows/android.yml/badge.svg)](https://github.com/sampple-korea/wifi-vault-restore/actions/workflows/android.yml)
+
+[한국어 README](README.ko.md)
+
 Wi-Fi Vault Restore is an Android app for backing up, extracting, restoring, and auditing Wi-Fi credentials under the limits of modern Android security.
 
 The project is built as a commercial-grade MVP:

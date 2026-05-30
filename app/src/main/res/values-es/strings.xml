@@ -11,6 +11,10 @@
     <string name="headline_reports">Informes de restauración</string>
     <string name="action_import">Importar archivo</string>
     <string name="action_paste_qr">Pegar QR</string>
+    <string name="action_cancel">Cancelar</string>
+    <string name="action_save">Guardar</string>
+    <string name="qr_dialog_title">Pegar texto QR de Wi‑Fi</string>
+    <string name="qr_dialog_label">Contenido QR</string>
     <string name="action_request_shizuku">Activar Shizuku</string>
     <string name="action_extract_system">Extraer del sistema</string>
     <string name="action_restore_selected">Restaurar selección</string>

@@ -1,5 +1,9 @@
 # Wi-Fi Vault Restore
 
+[![Android](https://github.com/sampple-korea/wifi-vault-restore/actions/workflows/android.yml/badge.svg)](https://github.com/sampple-korea/wifi-vault-restore/actions/workflows/android.yml)
+
+[English README](README.md)
+
 Wi-Fi Vault Restore는 최신 Android 보안 정책 안에서 Wi‑Fi 자격 증명을 백업, 추출, 복원, 감사하기 위한 Android 앱입니다.
 
 상용 MVP 기준으로 다음 기능을 목표로 합니다.

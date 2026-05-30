@@ -95,6 +95,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun importText(text: String) {
+        importBytes("pasted-wifi-qr.txt", text.toByteArray(Charsets.UTF_8))
+    }
+
     fun extractSystem() {
         viewModelScope.launch {
             val started = System.currentTimeMillis()

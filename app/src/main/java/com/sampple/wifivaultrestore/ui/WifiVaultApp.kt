@@ -22,6 +22,7 @@ import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.icons.rounded.Restore
 import androidx.compose.material.icons.rounded.Security
 import androidx.compose.material3.AssistChip
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -32,6 +33,7 @@ import androidx.compose.material3.ListItem
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -42,6 +44,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -79,6 +82,8 @@ fun WifiVaultApp(viewModel: MainViewModel = viewModel()) {
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     var selectedIndex by remember { mutableIntStateOf(0) }
+    var qrDialogOpen by remember { mutableStateOf(false) }
+    var qrText by remember { mutableStateOf("") }
     val destinations = Destination.entries
 
     val importLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
@@ -138,6 +143,7 @@ fun WifiVaultApp(viewModel: MainViewModel = viewModel()) {
                 state = state,
                 padding = padding,
                 onImport = { importLauncher.launch(arrayOf("*/*")) },
+                onPasteQr = { qrDialogOpen = true },
             )
             Destination.Extract -> ExtractPane(
                 state = state,
@@ -154,6 +160,39 @@ fun WifiVaultApp(viewModel: MainViewModel = viewModel()) {
             Destination.Reports -> ReportsPane(state = state, padding = padding)
         }
     }
+
+    if (qrDialogOpen) {
+        AlertDialog(
+            onDismissRequest = { qrDialogOpen = false },
+            title = { Text(stringResource(R.string.qr_dialog_title)) },
+            text = {
+                OutlinedTextField(
+                    value = qrText,
+                    onValueChange = { qrText = it },
+                    label = { Text(stringResource(R.string.qr_dialog_label)) },
+                    minLines = 4,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        viewModel.importText(qrText)
+                        qrText = ""
+                        qrDialogOpen = false
+                    },
+                    enabled = qrText.isNotBlank(),
+                ) {
+                    Text(stringResource(R.string.action_save))
+                }
+            },
+            dismissButton = {
+                OutlinedButton(onClick = { qrDialogOpen = false }) {
+                    Text(stringResource(R.string.action_cancel))
+                }
+            },
+        )
+    }
 }
 
 @Composable
@@ -161,11 +200,13 @@ private fun VaultPane(
     state: AppState,
     padding: PaddingValues,
     onImport: () -> Unit,
+    onPasteQr: () -> Unit,
 ) {
     ScreenColumn(padding) {
         SectionHeader(stringResource(R.string.headline_vault), "${state.vault.credentials.size} networks")
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Button(onClick = onImport) { Text(stringResource(R.string.action_import)) }
+            OutlinedButton(onClick = onPasteQr) { Text(stringResource(R.string.action_paste_qr)) }
             AssistChip(onClick = {}, label = { Text(stringResource(R.string.status_unlocked)) })
         }
         CredentialList(state.vault.credentials)

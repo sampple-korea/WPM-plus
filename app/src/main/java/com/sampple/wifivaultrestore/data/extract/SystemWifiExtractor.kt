@@ -39,7 +39,13 @@ class SystemWifiExtractor(
             notes += "No readable Wi‑Fi config XML files were returned for ${mode.name}."
         } else {
             files.forEach { (path, xml) ->
-                val parsed = runCatching { WifiConfigStoreParser.parse(xml, source) }
+                val parsed = runCatching {
+                    if (path.endsWith("wpa_supplicant.conf")) {
+                        WpaSupplicantParser.parse(xml, source)
+                    } else {
+                        WifiConfigStoreParser.parse(xml, source)
+                    }
+                }
                     .onFailure { notes += "Could not parse $path: ${it.javaClass.simpleName}" }
                     .getOrDefault(emptyList())
                 parsed.forEach { credentials[it.id] = it }

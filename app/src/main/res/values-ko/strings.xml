@@ -11,6 +11,10 @@
     <string name="headline_reports">복원 리포트</string>
     <string name="action_import">파일 가져오기</string>
     <string name="action_paste_qr">QR 붙여넣기</string>
+    <string name="action_cancel">취소</string>
+    <string name="action_save">저장</string>
+    <string name="qr_dialog_title">Wi‑Fi QR 텍스트 붙여넣기</string>
+    <string name="qr_dialog_label">QR 내용</string>
     <string name="action_request_shizuku">Shizuku 켜기</string>
     <string name="action_extract_system">시스템에서 추출</string>
     <string name="action_restore_selected">선택 항목 복원</string>

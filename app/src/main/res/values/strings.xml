@@ -11,6 +11,10 @@
     <string name="headline_reports">Restore reports</string>
     <string name="action_import">Import file</string>
     <string name="action_paste_qr">Paste QR</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="action_save">Save</string>
+    <string name="qr_dialog_title">Paste Wi‑Fi QR text</string>
+    <string name="qr_dialog_label">QR payload</string>
     <string name="action_request_shizuku">Enable Shizuku</string>
     <string name="action_extract_system">Extract from system</string>
     <string name="action_restore_selected">Restore selected</string>
