@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Wi‑Fi Vault Restore</string>
+    <string name="nav_vault">金庫</string>
+    <string name="nav_extract">抽出</string>
+    <string name="nav_restore">復元</string>
+    <string name="nav_reports">レポート</string>
+    <string name="headline_vault">暗号化 Wi‑Fi 金庫</string>
+    <string name="headline_extract">システム抽出</string>
+    <string name="headline_restore">保存済みネットワークを復元</string>
+    <string name="headline_reports">復元レポート</string>
+    <string name="action_import">ファイルを取り込む</string>
+    <string name="action_paste_qr">QRを貼り付け</string>
+    <string name="action_request_shizuku">Shizukuを有効化</string>
+    <string name="action_extract_system">システムから抽出</string>
+    <string name="action_restore_selected">選択項目を復元</string>
+    <string name="action_change_language">言語</string>
+    <string name="status_ready">準備完了</string>
+    <string name="status_locked">金庫はロック中</string>
+    <string name="status_unlocked">金庫は解除済み</string>
+    <string name="empty_vault">金庫に保存されたネットワークはまだありません。</string>
+    <string name="shizuku_not_running">Shizukuが実行されていません。</string>
+    <string name="shizuku_shell">Shizuku shell モード</string>
+    <string name="shizuku_root">Shizuku root モード</string>
+    <string name="extract_note">通常のアプリは保存済み Wi‑Fi パスワードを読み取れません。Shizuku/root 抽出ではシステムファイルと特権診断を試し、利用可能だった内容だけを正確に報告します。</string>
+</resources>

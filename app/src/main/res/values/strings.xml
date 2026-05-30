@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Wi‑Fi Vault Restore</string>
+    <string name="nav_vault">Vault</string>
+    <string name="nav_extract">Extract</string>
+    <string name="nav_restore">Restore</string>
+    <string name="nav_reports">Reports</string>
+    <string name="headline_vault">Encrypted Wi‑Fi vault</string>
+    <string name="headline_extract">System extraction</string>
+    <string name="headline_restore">Restore saved networks</string>
+    <string name="headline_reports">Restore reports</string>
+    <string name="action_import">Import file</string>
+    <string name="action_paste_qr">Paste QR</string>
+    <string name="action_request_shizuku">Enable Shizuku</string>
+    <string name="action_extract_system">Extract from system</string>
+    <string name="action_restore_selected">Restore selected</string>
+    <string name="action_change_language">Language</string>
+    <string name="status_ready">Ready</string>
+    <string name="status_locked">Vault locked</string>
+    <string name="status_unlocked">Vault unlocked</string>
+    <string name="empty_vault">No saved networks in the vault yet.</string>
+    <string name="shizuku_not_running">Shizuku is not running.</string>
+    <string name="shizuku_shell">Shizuku shell mode</string>
+    <string name="shizuku_root">Shizuku root mode</string>
+    <string name="extract_note">Normal apps cannot read saved Wi‑Fi passwords. Shizuku/root extraction tries system files and privileged diagnostics, then reports exactly what was available.</string>
+</resources>

@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Wi‑Fi 금고 복원</string>
+    <string name="nav_vault">금고</string>
+    <string name="nav_extract">추출</string>
+    <string name="nav_restore">복원</string>
+    <string name="nav_reports">리포트</string>
+    <string name="headline_vault">암호화 Wi‑Fi 금고</string>
+    <string name="headline_extract">시스템 추출</string>
+    <string name="headline_restore">저장 네트워크 복원</string>
+    <string name="headline_reports">복원 리포트</string>
+    <string name="action_import">파일 가져오기</string>
+    <string name="action_paste_qr">QR 붙여넣기</string>
+    <string name="action_request_shizuku">Shizuku 켜기</string>
+    <string name="action_extract_system">시스템에서 추출</string>
+    <string name="action_restore_selected">선택 항목 복원</string>
+    <string name="action_change_language">언어</string>
+    <string name="status_ready">준비됨</string>
+    <string name="status_locked">금고 잠김</string>
+    <string name="status_unlocked">금고 열림</string>
+    <string name="empty_vault">아직 금고에 저장된 네트워크가 없습니다.</string>
+    <string name="shizuku_not_running">Shizuku가 실행 중이 아닙니다.</string>
+    <string name="shizuku_shell">Shizuku shell 모드</string>
+    <string name="shizuku_root">Shizuku root 모드</string>
+    <string name="extract_note">일반 앱은 저장된 Wi‑Fi 비밀번호를 읽을 수 없습니다. Shizuku/root 추출은 시스템 파일과 권한 진단을 시도하고, 실제로 가능한 항목만 정확히 리포트합니다.</string>
+</resources>
