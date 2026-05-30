@@ -22,8 +22,9 @@ class ImportPasswordRequiredException : IllegalArgumentException(
 )
 
 object VaultExportCodec {
-    private const val PORTABLE_FORMAT = "wifi-vault-restore"
-    private const val ENCRYPTED_FORMAT = "wifi-vault-restore.encrypted"
+    private const val PORTABLE_FORMAT = "wpm-plus"
+    private const val ENCRYPTED_FORMAT = "wpm-plus.encrypted"
+    private const val LEGACY_ENCRYPTED_FORMAT = "wifi-vault-restore.encrypted"
     private const val FORMAT_VERSION = 2
     private const val CIPHER = "AES/GCM/NoPadding"
     private const val KDF = "PBKDF2WithHmacSHA256"
@@ -63,7 +64,8 @@ object VaultExportCodec {
         val text = bytes.toString(Charsets.UTF_8).trimStart()
         if (!text.startsWith("{")) return null
         val envelope = runCatching { JSONObject(text) }.getOrNull() ?: return null
-        if (envelope.optString("format") != ENCRYPTED_FORMAT) return null
+        val format = envelope.optString("format")
+        if (format != ENCRYPTED_FORMAT && format != LEGACY_ENCRYPTED_FORMAT) return null
         if (password.isNullOrBlank()) throw ImportPasswordRequiredException()
 
         val iterations = envelope.optInt("iterations", ITERATIONS)

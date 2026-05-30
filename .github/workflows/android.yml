@@ -31,5 +31,5 @@ jobs:
       - name: Upload debug APK
         uses: actions/upload-artifact@v5
         with:
-          name: wifi-vault-restore-debug
+          name: wpm-plus-debug
           path: app/build/outputs/apk/debug/app-debug.apk

@@ -1,6 +1,6 @@
 # WPM+
 
-[![Android](https://github.com/sampple-korea/wifi-vault-restore/actions/workflows/android.yml/badge.svg)](https://github.com/sampple-korea/wifi-vault-restore/actions/workflows/android.yml)
+[![Android](https://github.com/sampple-korea/WPM-plus/actions/workflows/android.yml/badge.svg)](https://github.com/sampple-korea/WPM-plus/actions/workflows/android.yml)
 
 [English README](README.md)
 
