@@ -12,19 +12,28 @@ import java.io.File
 
 class WifiVaultRepository(context: Context) {
     private val appContext = context.applicationContext
-    private val crypto = VaultCrypto(appContext)
+    private val crypto = VaultCrypto()
     private val vaultFile: File = File(appContext.filesDir, "wifi-vault.enc.json")
 
     suspend fun load(): VaultData = withContext(Dispatchers.IO) {
         if (!vaultFile.exists()) return@withContext VaultData()
-        val envelope = JSONObject(vaultFile.readText(Charsets.UTF_8))
-        val blob = EncryptedBlob(
-            keyAlias = envelope.optString("keyAlias"),
-            iv = Base64.decode(envelope.getString("iv"), Base64.NO_WRAP),
-            cipherText = Base64.decode(envelope.getString("cipherText"), Base64.NO_WRAP),
-        )
-        val plain = crypto.decrypt(blob)
-        VaultData.fromJson(JSONObject(String(plain, Charsets.UTF_8)))
+        runCatching {
+            val envelope = JSONObject(vaultFile.readText(Charsets.UTF_8))
+            val blob = EncryptedBlob(
+                keyAlias = envelope.optString("keyAlias"),
+                iv = Base64.decode(envelope.getString("iv"), Base64.NO_WRAP),
+                cipherText = Base64.decode(envelope.getString("cipherText"), Base64.NO_WRAP),
+            )
+            val plain = crypto.decrypt(blob)
+            VaultData.fromJson(JSONObject(String(plain, Charsets.UTF_8)))
+        }.getOrElse { error ->
+            if (error is VaultLockedException) {
+                archiveLockedVault()
+                VaultData()
+            } else {
+                throw error
+            }
+        }
     }
 
     suspend fun replace(data: VaultData) = withContext(Dispatchers.IO) {
@@ -81,5 +90,14 @@ class WifiVaultRepository(context: Context) {
         val updated = current.copy(reports = (listOf(report) + current.reports).take(100))
         replace(updated)
         return updated
+    }
+
+    private fun archiveLockedVault() {
+        val backup = File(
+            appContext.filesDir,
+            "wifi-vault.locked.${System.currentTimeMillis()}.enc.json",
+        )
+        runCatching { vaultFile.copyTo(backup, overwrite = false) }
+        runCatching { vaultFile.delete() }
     }
 }

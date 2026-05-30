@@ -85,7 +85,7 @@ The repo intentionally avoids storing real Wi-Fi passwords in fixtures, logs, or
 - No password values in logs, reports, crash messages, or UI summaries
 - Encrypted vault file excluded from Android Auto Backup and device transfer
 - Android Keystore key is device-bound
-- Biometric or device credential authentication is requested when the device is secure
+- The app does not require biometric unlock for the local vault in the MVP build, so extraction and restore jobs can run without a missing authentication prompt
 - Shizuku/root extraction reports the exact privilege mode used
 
 ## License
