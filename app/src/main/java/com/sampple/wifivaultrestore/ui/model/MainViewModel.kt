@@ -5,7 +5,11 @@ import android.provider.Settings
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.sampple.wifivaultrestore.data.WifiCredential
+import com.sampple.wifivaultrestore.diagnostics.CrashReporter
 import com.sampple.wifivaultrestore.data.extract.SystemWifiExtractor
+import com.sampple.wifivaultrestore.data.extract.ShizukuWifiManagerReader
+import com.sampple.wifivaultrestore.data.importer.ImportPasswordRequiredException
+import com.sampple.wifivaultrestore.data.importer.VaultExportCodec
 import com.sampple.wifivaultrestore.data.importer.WifiImportParser
 import com.sampple.wifivaultrestore.data.report.OperationKind
 import com.sampple.wifivaultrestore.data.report.OperationReport
@@ -22,12 +26,15 @@ import java.util.UUID
 class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val repository = WifiVaultRepository(application)
     private val shizuku = ShizukuCommandRunner(application)
-    private val extractor = SystemWifiExtractor(shizuku)
+    private val extractor = SystemWifiExtractor(shizuku, ShizukuWifiManagerReader(application))
 
     private val _state = MutableStateFlow(AppState())
     val state: StateFlow<AppState> = _state.asStateFlow()
 
     init {
+        CrashReporter.consumePendingReport(application)?.let { report ->
+            _state.update { it.copy(pendingCrashReport = report) }
+        }
         refresh()
     }
 
@@ -64,11 +71,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         _state.update { it.copy(shizuku = shizuku.state()) }
     }
 
-    fun importBytes(fileName: String?, bytes: ByteArray) {
+    fun importBytes(fileName: String?, bytes: ByteArray, password: String? = null) {
         viewModelScope.launch {
             val started = System.currentTimeMillis()
+            _state.update { it.copy(busy = true) }
             runCatching {
-                val outcome = WifiImportParser.parse(fileName, bytes)
+                val outcome = WifiImportParser.parse(fileName, bytes, password)
                 val vault = repository.upsertCredentials(outcome.credentials)
                 val report = OperationReport(
                     id = UUID.randomUUID().toString(),
@@ -86,22 +94,78 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 _state.update {
                     it.copy(
                         vault = vault,
+                        busy = false,
+                        pendingImportBytes = null,
+                        pendingImportFileName = null,
                         message = "Imported ${vault.credentials.size} total vault entries.",
                     )
                 }
             }.onFailure { error ->
-                _state.update { it.copy(message = error.message ?: "Import failed.") }
+                if (error is ImportPasswordRequiredException) {
+                    _state.update {
+                        it.copy(
+                            busy = false,
+                            pendingImportBytes = bytes,
+                            pendingImportFileName = fileName,
+                            message = error.message,
+                        )
+                    }
+                } else {
+                    _state.update {
+                        it.copy(
+                            busy = false,
+                            pendingImportBytes = null,
+                            pendingImportFileName = null,
+                            message = error.message ?: "Import failed.",
+                        )
+                    }
+                }
             }
         }
+    }
+
+    fun importPendingEncrypted(password: String) {
+        val bytes = state.value.pendingImportBytes ?: return
+        importBytes(state.value.pendingImportFileName, bytes, password)
+    }
+
+    fun cancelPendingImportPassword() {
+        _state.update { it.copy(pendingImportBytes = null, pendingImportFileName = null) }
+    }
+
+    fun clearPendingCrashReport() {
+        _state.update { it.copy(pendingCrashReport = null) }
     }
 
     fun importText(text: String) {
         importBytes("pasted-wifi-qr.txt", text.toByteArray(Charsets.UTF_8))
     }
 
+    fun updateNote(credentialId: String, note: String?) {
+        viewModelScope.launch {
+            runCatching { repository.updateNote(credentialId, note) }
+                .onSuccess { vault ->
+                    _state.update { it.copy(vault = vault, message = "Note saved.") }
+                }
+                .onFailure { error ->
+                    _state.update { it.copy(message = error.message ?: "Could not save note.") }
+                }
+        }
+    }
+
+    fun exportVault(encrypt: Boolean, password: String?): ByteArray {
+        val vault = state.value.vault
+        return if (encrypt) {
+            VaultExportCodec.exportEncryptedGzip(vault, password.orEmpty())
+        } else {
+            VaultExportCodec.exportGzip(vault)
+        }
+    }
+
     fun extractSystem() {
         viewModelScope.launch {
             val started = System.currentTimeMillis()
+            _state.update { it.copy(busy = true) }
             runCatching {
                 val outcome = extractor.extract()
                 val vault = repository.upsertCredentials(outcome.credentials)
@@ -121,6 +185,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 _state.update {
                     it.copy(
                         vault = vault,
+                        busy = false,
                         lastExtraction = outcome,
                         shizuku = shizuku.state(),
                         message = "Extracted ${outcome.credentials.size} entries; ${outcome.withPasswords} include passwords.",
@@ -129,6 +194,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             }.onFailure { error ->
                 _state.update {
                     it.copy(
+                        busy = false,
                         shizuku = shizuku.state(),
                         message = error.message ?: "Extraction failed.",
                     )

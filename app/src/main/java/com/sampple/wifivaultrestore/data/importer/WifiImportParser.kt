@@ -25,7 +25,10 @@ data class ImportSkip(
 )
 
 object WifiImportParser {
-    fun parse(fileName: String?, bytes: ByteArray): ImportOutcome {
+    fun parse(fileName: String?, bytes: ByteArray, password: String? = null): ImportOutcome {
+        VaultExportCodec.decodeEncryptedIfPresent(bytes, password)?.let { vault ->
+            return ImportOutcome(vault.credentials.distinctBy { it.id }, emptyList())
+        }
         val plain = maybeGunzip(fileName, bytes).toString(Charsets.UTF_8).trim()
         return when {
             plain.startsWith("[") || plain.startsWith("{") -> parseJson(plain)
@@ -93,6 +96,7 @@ object WifiImportParser {
             password = password,
             hidden = json.optBoolean("hidden", json.optBoolean("hiddenSsid", false)),
             autoJoin = json.optBoolean("autojoin", json.optBoolean("autoJoin", true)),
+            note = parseNote(json),
             source = if (json.has("private")) CredentialSource.QuickShare else CredentialSource.Json,
         )
     }
@@ -111,6 +115,9 @@ object WifiImportParser {
         val autoJoinIndex = if (hasHeader) {
             header.indexOf("autojoin").takeIf { it >= 0 } ?: header.indexOf("auto_join")
         } else 4
+        val noteIndex = if (hasHeader) {
+            header.indexOf("note").takeIf { it >= 0 } ?: header.indexOf("notes")
+        } else 5
 
         val credentials = mutableListOf<WifiCredential>()
         val skipped = mutableListOf<ImportSkip>()
@@ -126,10 +133,24 @@ object WifiImportParser {
                 password = row.getOrNull(passwordIndex).orEmpty().ifBlank { null },
                 hidden = row.getOrNull(hiddenIndex).toBooleanCompat(),
                 autoJoin = row.getOrNull(autoJoinIndex).toBooleanCompat(default = true),
+                note = row.getOrNull(noteIndex).orEmpty().ifBlank { null },
                 source = CredentialSource.Csv,
             )
         }
         return ImportOutcome(credentials.distinctBy { it.id }, skipped)
+    }
+
+    private fun parseNote(json: JSONObject): String? {
+        val direct = json.optString("note", "").takeIf { it.isNotBlank() }
+        if (direct != null) return direct.trim()
+        val notesString = json.optString("notes", "").takeIf { it.isNotBlank() }
+        if (notesString != null) return notesString.trim()
+        return json.optJSONArray("notes")?.asSequence()
+            ?.mapNotNull { it as? String }
+            ?.map { it.trim() }
+            ?.filter { it.isNotEmpty() }
+            ?.joinToString("\n")
+            ?.takeIf { it.isNotBlank() }
     }
 
     private fun parseWifiQrLines(text: String): ImportOutcome {

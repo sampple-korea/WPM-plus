@@ -9,6 +9,7 @@ import com.sampple.wifivaultrestore.shizuku.ShizukuCommandRunner
 
 class SystemWifiExtractor(
     private val commandRunner: ShizukuCommandRunner,
+    private val privilegedReader: ShizukuWifiManagerReader? = null,
 ) {
     suspend fun extract(): ExtractionOutcome {
         val state = commandRunner.state()
@@ -32,6 +33,13 @@ class SystemWifiExtractor(
         val credentials = linkedMapOf<String, WifiCredential>()
         var sourcesChecked = 0
 
+        val privilegedRead = privilegedReader?.read(mode, source)
+        if (privilegedRead != null) {
+            sourcesChecked++
+            notes += privilegedRead.notes
+            privilegedRead.credentials.forEach { credentials.mergeCredential(it) }
+        }
+
         val fileResult = commandRunner.run(WIFI_CONFIG_DUMP_COMMAND)
         if (fileResult.exitCode != 0 || fileResult.error.isNotBlank()) {
             notes += "System config read failed: ${fileResult.error.ifBlank { "exit ${fileResult.exitCode}" }}"
@@ -51,7 +59,7 @@ class SystemWifiExtractor(
                 }
                     .onFailure { notes += "Could not parse $path: ${it.javaClass.simpleName}" }
                     .getOrDefault(emptyList())
-                parsed.forEach { credentials[it.id] = it }
+                parsed.forEach { credentials.mergeCredential(it) }
                 notes += "Parsed ${parsed.size} network entries from $path."
             }
         }
@@ -81,6 +89,19 @@ class SystemWifiExtractor(
             notes = notes,
             rawSourcesChecked = sourcesChecked,
         )
+    }
+
+    private fun MutableMap<String, WifiCredential>.mergeCredential(credential: WifiCredential) {
+        val existing = this[credential.id]
+        this[credential.id] = if (existing == null) {
+            credential
+        } else {
+            credential.copy(
+                password = credential.password ?: existing.password,
+                note = credential.note ?: existing.note,
+                createdAtMillis = existing.createdAtMillis,
+            )
+        }
     }
 
     private fun parseCmdWifiListNetworks(output: String, source: CredentialSource): List<WifiCredential> {

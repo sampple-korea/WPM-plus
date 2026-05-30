@@ -46,12 +46,32 @@ class WifiVaultRepository(context: Context) {
                 credential
             } else {
                 credential.copy(
+                    password = credential.password ?: existing.password,
+                    note = credential.note ?: existing.note,
                     createdAtMillis = existing.createdAtMillis,
                     updatedAtMillis = System.currentTimeMillis(),
                 )
             }
         }
         val updated = current.copy(credentials = byId.values.sortedBy { it.ssid.lowercase() })
+        replace(updated)
+        return updated
+    }
+
+    suspend fun updateNote(credentialId: String, note: String?): VaultData {
+        val current = load()
+        val updated = current.copy(
+            credentials = current.credentials.map { credential ->
+                if (credential.id == credentialId) {
+                    credential.copy(
+                        note = note?.trim()?.takeIf { it.isNotEmpty() },
+                        updatedAtMillis = System.currentTimeMillis(),
+                    )
+                } else {
+                    credential
+                }
+            },
+        )
         replace(updated)
         return updated
     }

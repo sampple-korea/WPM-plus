@@ -42,6 +42,7 @@ private object WifiCredentialJson {
             password = json.optString("password").takeIf { it.isNotEmpty() },
             hidden = json.optBoolean("hidden", false),
             autoJoin = json.optBoolean("autoJoin", true),
+            note = json.optString("note", json.optString("notes", "")).takeIf { it.isNotBlank() },
             source = runCatching {
                 CredentialSource.valueOf(json.optString("source", CredentialSource.Manual.name))
             }.getOrDefault(CredentialSource.Manual),
@@ -58,6 +59,7 @@ fun WifiCredential.toJson(): JSONObject = JSONObject()
     .put("password", password ?: "")
     .put("hidden", hidden)
     .put("autoJoin", autoJoin)
+    .put("note", note ?: "")
     .put("source", source.name)
     .put("createdAtMillis", createdAtMillis)
     .put("updatedAtMillis", updatedAtMillis)

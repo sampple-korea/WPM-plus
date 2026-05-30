@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Wi‑Fi 금고 복원</string>
+    <string name="app_name">WPM+</string>
     <string name="nav_vault">금고</string>
     <string name="nav_extract">추출</string>
     <string name="nav_restore">복원</string>
@@ -10,9 +10,11 @@
     <string name="headline_restore">저장 네트워크 복원</string>
     <string name="headline_reports">복원 리포트</string>
     <string name="action_import">파일 가져오기</string>
+    <string name="action_export">내보내기</string>
     <string name="action_paste_qr">QR 붙여넣기</string>
     <string name="action_cancel">취소</string>
     <string name="action_save">저장</string>
+    <string name="action_copy_log">로그 복사</string>
     <string name="qr_dialog_title">Wi‑Fi QR 텍스트 붙여넣기</string>
     <string name="qr_dialog_label">QR 내용</string>
     <string name="action_request_shizuku">Shizuku 켜기</string>
@@ -23,6 +25,26 @@
     <string name="status_locked">금고 잠김</string>
     <string name="status_unlocked">금고 열림</string>
     <string name="empty_vault">아직 금고에 저장된 네트워크가 없습니다.</string>
+    <string name="vault_count">네트워크 %1$d개</string>
+    <string name="restorable_count">복원 가능 %1$d개</string>
+    <string name="report_count">최근 리포트 %1$d개</string>
+    <string name="search_label">SSID, 보안, 메모 검색</string>
+    <string name="password_saved">비밀번호 저장됨</string>
+    <string name="password_missing">비밀번호 없음</string>
+    <string name="message_password_copied">비밀번호를 민감한 클립보드 항목으로 복사했습니다.</string>
+    <string name="message_export_complete">금고 내보내기를 저장했습니다.</string>
+    <string name="message_export_failed">금고 내보내기에 실패했습니다.</string>
+    <string name="crash_dialog_title">이전 크래시 감지됨</string>
+    <string name="crash_dialog_body">이전 실행 중 WPM+가 종료되었습니다. 디버깅을 위해 복사할 수 있도록 이 리포트는 한 번만 표시됩니다.</string>
+    <string name="crash_clipboard_label">WPM+ 크래시 리포트</string>
+    <string name="crash_copied_message">크래시 리포트를 복사했습니다.</string>
+    <string name="export_dialog_title">금고 내보내기</string>
+    <string name="export_encrypt_label">내보내기 암호화</string>
+    <string name="export_encrypt_supporting">기기 간 이동이나 공유용으로 비밀번호를 걸어 저장합니다.</string>
+    <string name="export_password_label">내보내기 비밀번호</string>
+    <string name="import_password_title">암호화된 내보내기 파일</string>
+    <string name="note_dialog_title">%1$s 메모</string>
+    <string name="note_label">메모</string>
     <string name="shizuku_not_running">Shizuku가 실행 중이 아닙니다.</string>
     <string name="shizuku_shell">Shizuku shell 모드</string>
     <string name="shizuku_root">Shizuku root 모드</string>

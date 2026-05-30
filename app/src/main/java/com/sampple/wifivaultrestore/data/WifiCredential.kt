@@ -20,6 +20,7 @@ data class WifiCredential(
     val password: String?,
     val hidden: Boolean = false,
     val autoJoin: Boolean = true,
+    val note: String? = null,
     val source: CredentialSource = CredentialSource.Manual,
     val createdAtMillis: Long = System.currentTimeMillis(),
     val updatedAtMillis: Long = createdAtMillis,
@@ -47,6 +48,7 @@ data class WifiCredential(
             password: String?,
             hidden: Boolean = false,
             autoJoin: Boolean = true,
+            note: String? = null,
             source: CredentialSource = CredentialSource.Manual,
             nowMillis: Long = System.currentTimeMillis(),
         ): WifiCredential {
@@ -58,6 +60,7 @@ data class WifiCredential(
                 password = password?.takeIf { it.isNotEmpty() },
                 hidden = hidden,
                 autoJoin = autoJoin,
+                note = note?.trim()?.takeIf { it.isNotEmpty() },
                 source = source,
                 createdAtMillis = nowMillis,
                 updatedAtMillis = nowMillis,

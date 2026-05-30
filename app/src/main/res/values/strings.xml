@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Wi‑Fi Vault Restore</string>
+    <string name="app_name">WPM+</string>
     <string name="nav_vault">Vault</string>
     <string name="nav_extract">Extract</string>
     <string name="nav_restore">Restore</string>
@@ -10,9 +10,11 @@
     <string name="headline_restore">Restore saved networks</string>
     <string name="headline_reports">Restore reports</string>
     <string name="action_import">Import file</string>
+    <string name="action_export">Export</string>
     <string name="action_paste_qr">Paste QR</string>
     <string name="action_cancel">Cancel</string>
     <string name="action_save">Save</string>
+    <string name="action_copy_log">Copy log</string>
     <string name="qr_dialog_title">Paste Wi‑Fi QR text</string>
     <string name="qr_dialog_label">QR payload</string>
     <string name="action_request_shizuku">Enable Shizuku</string>
@@ -23,6 +25,26 @@
     <string name="status_locked">Vault locked</string>
     <string name="status_unlocked">Vault unlocked</string>
     <string name="empty_vault">No saved networks in the vault yet.</string>
+    <string name="vault_count">%1$d networks</string>
+    <string name="restorable_count">%1$d restorable networks</string>
+    <string name="report_count">%1$d recent reports</string>
+    <string name="search_label">Search SSID, security, or note</string>
+    <string name="password_saved">password saved</string>
+    <string name="password_missing">no password</string>
+    <string name="message_password_copied">Password copied as sensitive clipboard content.</string>
+    <string name="message_export_complete">Vault export saved.</string>
+    <string name="message_export_failed">Vault export failed.</string>
+    <string name="crash_dialog_title">Previous crash detected</string>
+    <string name="crash_dialog_body">WPM+ crashed during the previous run. This report is shown only once so you can copy it for debugging.</string>
+    <string name="crash_clipboard_label">WPM+ crash report</string>
+    <string name="crash_copied_message">Crash report copied.</string>
+    <string name="export_dialog_title">Export vault</string>
+    <string name="export_encrypt_label">Encrypt export</string>
+    <string name="export_encrypt_supporting">Use a password for sharing or moving the vault between devices.</string>
+    <string name="export_password_label">Export password</string>
+    <string name="import_password_title">Encrypted export</string>
+    <string name="note_dialog_title">Note for %1$s</string>
+    <string name="note_label">Note</string>
     <string name="shizuku_not_running">Shizuku is not running.</string>
     <string name="shizuku_shell">Shizuku shell mode</string>
     <string name="shizuku_root">Shizuku root mode</string>

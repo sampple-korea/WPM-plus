@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Wi‑Fi Vault Restore</string>
+    <string name="app_name">WPM+</string>
     <string name="nav_vault">金庫</string>
     <string name="nav_extract">抽出</string>
     <string name="nav_restore">復元</string>
@@ -10,9 +10,11 @@
     <string name="headline_restore">保存済みネットワークを復元</string>
     <string name="headline_reports">復元レポート</string>
     <string name="action_import">ファイルを取り込む</string>
+    <string name="action_export">書き出し</string>
     <string name="action_paste_qr">QRを貼り付け</string>
     <string name="action_cancel">キャンセル</string>
     <string name="action_save">保存</string>
+    <string name="action_copy_log">ログをコピー</string>
     <string name="qr_dialog_title">Wi‑Fi QR テキストを貼り付け</string>
     <string name="qr_dialog_label">QRペイロード</string>
     <string name="action_request_shizuku">Shizukuを有効化</string>
@@ -23,6 +25,26 @@
     <string name="status_locked">金庫はロック中</string>
     <string name="status_unlocked">金庫は解除済み</string>
     <string name="empty_vault">金庫に保存されたネットワークはまだありません。</string>
+    <string name="vault_count">%1$d 件のネットワーク</string>
+    <string name="restorable_count">復元可能 %1$d 件</string>
+    <string name="report_count">最近のレポート %1$d 件</string>
+    <string name="search_label">SSID、セキュリティ、メモを検索</string>
+    <string name="password_saved">パスワード保存済み</string>
+    <string name="password_missing">パスワードなし</string>
+    <string name="message_password_copied">パスワードを機密クリップボードとしてコピーしました。</string>
+    <string name="message_export_complete">金庫の書き出しを保存しました。</string>
+    <string name="message_export_failed">金庫の書き出しに失敗しました。</string>
+    <string name="crash_dialog_title">前回のクラッシュを検出</string>
+    <string name="crash_dialog_body">前回の実行中に WPM+ が終了しました。デバッグ用にコピーできるよう、このレポートは一度だけ表示されます。</string>
+    <string name="crash_clipboard_label">WPM+ クラッシュレポート</string>
+    <string name="crash_copied_message">クラッシュレポートをコピーしました。</string>
+    <string name="export_dialog_title">金庫を書き出し</string>
+    <string name="export_encrypt_label">書き出しを暗号化</string>
+    <string name="export_encrypt_supporting">端末間で移動または共有するときにパスワードで保護します。</string>
+    <string name="export_password_label">書き出しパスワード</string>
+    <string name="import_password_title">暗号化された書き出し</string>
+    <string name="note_dialog_title">%1$s のメモ</string>
+    <string name="note_label">メモ</string>
     <string name="shizuku_not_running">Shizukuが実行されていません。</string>
     <string name="shizuku_shell">Shizuku shell モード</string>
     <string name="shizuku_root">Shizuku root モード</string>

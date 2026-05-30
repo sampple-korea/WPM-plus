@@ -2,6 +2,8 @@ package com.sampple.wifivaultrestore.data.importer
 
 import com.sampple.wifivaultrestore.data.CredentialSource
 import com.sampple.wifivaultrestore.data.SecurityType
+import com.sampple.wifivaultrestore.data.VaultData
+import com.sampple.wifivaultrestore.data.WifiCredential
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -28,14 +30,15 @@ class WifiImportParserTest {
     @Test
     fun parsesCsvWithQuotedSsid() {
         val csv = """
-            ssid,security,password,hidden,autojoin
-            "Cafe, Main",wpa2,cafepass,false,true
+            ssid,security,password,hidden,autojoin,note
+            "Cafe, Main",wpa2,cafepass,false,true,"second floor"
         """.trimIndent()
 
         val result = WifiImportParser.parseText(csv)
 
         assertEquals(1, result.importedCount)
         assertEquals("Cafe, Main", result.credentials.single().ssid)
+        assertEquals("second floor", result.credentials.single().note)
     }
 
     @Test
@@ -48,6 +51,41 @@ class WifiImportParserTest {
         assertEquals("Cafe;Main", result.credentials.single().ssid)
         assertEquals("pa:ss", result.credentials.single().password)
         assertTrue(result.credentials.single().hidden)
+    }
+
+    @Test
+    fun roundTripsPortableVaultGzip() {
+        val credential = WifiCredential.create(
+            ssid = "Lab",
+            security = setOf(SecurityType.WPA2),
+            password = "labpass123",
+            note = "rack room",
+        )
+
+        val bytes = VaultExportCodec.exportGzip(VaultData(credentials = listOf(credential)))
+        val result = WifiImportParser.parse("vault.wpmv.json.gz", bytes)
+
+        assertEquals(1, result.importedCount)
+        assertEquals("rack room", result.credentials.single().note)
+        assertEquals("labpass123", result.credentials.single().password)
+    }
+
+    @Test
+    fun roundTripsEncryptedVaultExport() {
+        val credential = WifiCredential.create(
+            ssid = "Private",
+            security = setOf(SecurityType.WPA3),
+            password = "privatepass123",
+        )
+
+        val bytes = VaultExportCodec.exportEncryptedGzip(
+            data = VaultData(credentials = listOf(credential)),
+            password = "export-password",
+        )
+        val result = WifiImportParser.parse("vault.wpmv.json", bytes, "export-password")
+
+        assertEquals(1, result.importedCount)
+        assertEquals("Private", result.credentials.single().ssid)
     }
 
     private fun gzip(text: String): ByteArray {

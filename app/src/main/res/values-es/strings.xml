@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Wi‑Fi Vault Restore</string>
+    <string name="app_name">WPM+</string>
     <string name="nav_vault">Bóveda</string>
     <string name="nav_extract">Extraer</string>
     <string name="nav_restore">Restaurar</string>
@@ -10,9 +10,11 @@
     <string name="headline_restore">Restaurar redes guardadas</string>
     <string name="headline_reports">Informes de restauración</string>
     <string name="action_import">Importar archivo</string>
+    <string name="action_export">Exportar</string>
     <string name="action_paste_qr">Pegar QR</string>
     <string name="action_cancel">Cancelar</string>
     <string name="action_save">Guardar</string>
+    <string name="action_copy_log">Copiar registro</string>
     <string name="qr_dialog_title">Pegar texto QR de Wi‑Fi</string>
     <string name="qr_dialog_label">Contenido QR</string>
     <string name="action_request_shizuku">Activar Shizuku</string>
@@ -23,6 +25,26 @@
     <string name="status_locked">Bóveda bloqueada</string>
     <string name="status_unlocked">Bóveda desbloqueada</string>
     <string name="empty_vault">Todavía no hay redes guardadas en la bóveda.</string>
+    <string name="vault_count">%1$d redes</string>
+    <string name="restorable_count">%1$d redes restaurables</string>
+    <string name="report_count">%1$d informes recientes</string>
+    <string name="search_label">Buscar SSID, seguridad o nota</string>
+    <string name="password_saved">contraseña guardada</string>
+    <string name="password_missing">sin contraseña</string>
+    <string name="message_password_copied">Contraseña copiada como contenido sensible del portapapeles.</string>
+    <string name="message_export_complete">Exportación de la bóveda guardada.</string>
+    <string name="message_export_failed">Error al exportar la bóveda.</string>
+    <string name="crash_dialog_title">Se detectó un cierre anterior</string>
+    <string name="crash_dialog_body">WPM+ se cerró durante la ejecución anterior. Este informe se muestra solo una vez para que puedas copiarlo y depurarlo.</string>
+    <string name="crash_clipboard_label">Informe de cierre de WPM+</string>
+    <string name="crash_copied_message">Informe de cierre copiado.</string>
+    <string name="export_dialog_title">Exportar bóveda</string>
+    <string name="export_encrypt_label">Cifrar exportación</string>
+    <string name="export_encrypt_supporting">Usa una contraseña para compartir o mover la bóveda entre dispositivos.</string>
+    <string name="export_password_label">Contraseña de exportación</string>
+    <string name="import_password_title">Exportación cifrada</string>
+    <string name="note_dialog_title">Nota para %1$s</string>
+    <string name="note_label">Nota</string>
     <string name="shizuku_not_running">Shizuku no está en ejecución.</string>
     <string name="shizuku_shell">Modo shell de Shizuku</string>
     <string name="shizuku_root">Modo root de Shizuku</string>
