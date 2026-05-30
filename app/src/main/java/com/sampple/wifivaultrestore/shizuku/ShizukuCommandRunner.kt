@@ -7,6 +7,7 @@ import android.content.pm.PackageManager
 import android.os.IBinder
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import rikka.shizuku.Shizuku
@@ -51,24 +52,41 @@ class ShizukuCommandRunner(private val context: Context) {
     }
 
     fun requestPermission(requestCode: Int) {
-        if (runCatching { Shizuku.pingBinder() }.getOrDefault(false)) {
-            Shizuku.requestPermission(requestCode)
+        runCatching {
+            if (Shizuku.pingBinder()) {
+                Shizuku.requestPermission(requestCode)
+            }
         }
     }
 
     suspend fun run(command: String): ShellCommandResult = withContext(Dispatchers.IO) {
-        val service = bindService()
-        val raw = service.run(command)
-        val json = JSONObject(raw)
-        ShellCommandResult(
-            exitCode = json.optInt("exitCode", -1),
-            output = json.optString("output"),
-            error = json.optString("error"),
-            elapsedMillis = json.optLong("elapsedMillis"),
-        )
+        runCatching {
+            withTimeout(SERVICE_TIMEOUT_MILLIS) {
+                val bound = bindService()
+                try {
+                    val raw = bound.service.run(command)
+                    val json = JSONObject(raw)
+                    ShellCommandResult(
+                        exitCode = json.optInt("exitCode", -1),
+                        output = json.optString("output"),
+                        error = json.optString("error"),
+                        elapsedMillis = json.optLong("elapsedMillis"),
+                    )
+                } finally {
+                    bound.close()
+                }
+            }
+        }.getOrElse { error ->
+            ShellCommandResult(
+                exitCode = -1,
+                output = "",
+                error = error.javaClass.simpleName + ": " + (error.message ?: "Shizuku command failed"),
+                elapsedMillis = 0,
+            )
+        }
     }
 
-    private suspend fun bindService(): IShizukuShellService = suspendCancellableCoroutine { continuation ->
+    private suspend fun bindService(): BoundShizukuService = suspendCancellableCoroutine { continuation ->
         val args = Shizuku.UserServiceArgs(
             ComponentName(context.packageName, ShizukuShellService::class.java.name),
         )
@@ -79,15 +97,44 @@ class ShizukuCommandRunner(private val context: Context) {
 
         val connection = object : ServiceConnection {
             override fun onServiceConnected(name: ComponentName, binder: IBinder) {
-                continuation.resume(IShizukuShellService.Stub.asInterface(binder))
+                val service = IShizukuShellService.Stub.asInterface(binder)
+                if (continuation.isActive) {
+                    continuation.resume(BoundShizukuService(args, this, service))
+                }
             }
 
-            override fun onServiceDisconnected(name: ComponentName) = Unit
+            override fun onServiceDisconnected(name: ComponentName) {
+                if (continuation.isActive) {
+                    continuation.resumeWith(
+                        Result.failure(IllegalStateException("Shizuku user service disconnected.")),
+                    )
+                }
+            }
         }
 
         continuation.invokeOnCancellation {
             runCatching { Shizuku.unbindUserService(args, connection, false) }
         }
-        Shizuku.bindUserService(args, connection)
+        runCatching {
+            Shizuku.bindUserService(args, connection)
+        }.onFailure { error ->
+            if (continuation.isActive) {
+                continuation.resumeWith(Result.failure(error))
+            }
+        }
+    }
+
+    private data class BoundShizukuService(
+        val args: Shizuku.UserServiceArgs,
+        val connection: ServiceConnection,
+        val service: IShizukuShellService,
+    ) {
+        fun close() {
+            runCatching { Shizuku.unbindUserService(args, connection, false) }
+        }
+    }
+
+    private companion object {
+        const val SERVICE_TIMEOUT_MILLIS = 30_000L
     }
 }

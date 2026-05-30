@@ -33,6 +33,9 @@ class SystemWifiExtractor(
         var sourcesChecked = 0
 
         val fileResult = commandRunner.run(WIFI_CONFIG_DUMP_COMMAND)
+        if (fileResult.exitCode != 0 || fileResult.error.isNotBlank()) {
+            notes += "System config read failed: ${fileResult.error.ifBlank { "exit ${fileResult.exitCode}" }}"
+        }
         val files = extractMarkedFiles(fileResult.output)
         sourcesChecked += CONFIG_PATHS.size
         if (files.isEmpty()) {
@@ -54,6 +57,9 @@ class SystemWifiExtractor(
         }
 
         val listNetworks = commandRunner.run("cmd wifi list-networks 2>&1")
+        if (listNetworks.exitCode != 0 || listNetworks.error.isNotBlank()) {
+            notes += "cmd wifi list-networks failed: ${listNetworks.error.ifBlank { "exit ${listNetworks.exitCode}" }}"
+        }
         sourcesChecked++
         parseCmdWifiListNetworks(listNetworks.output, source)
             .filterNot { credentials.containsKey(it.id) }
