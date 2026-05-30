@@ -117,9 +117,9 @@ class SystemWifiExtractor(
             append("for p in ")
             append(CONFIG_PATHS.joinToString(" ") { "'$it'" })
             append("; do ")
-            append("if [ -r \"$p\" ]; then ")
-            append("echo $MARKER_START$p; cat \"$p\"; echo $MARKER_END$p; ")
-            append("else echo __WVR_UNREADABLE__$p; fi; ")
+            append("if [ -r \"\$p\" ]; then ")
+            append("echo $MARKER_START\$p; cat \"\$p\"; echo $MARKER_END\$p; ")
+            append("else echo __WVR_UNREADABLE__\$p; fi; ")
             append("done")
         }
     }

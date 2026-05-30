@@ -6,11 +6,10 @@ import androidx.annotation.Keep
 import org.json.JSONObject
 import java.util.concurrent.TimeUnit
 
-class ShizukuShellService : IShizukuShellService.Stub() {
-    constructor()
+class ShizukuShellService() : IShizukuShellService.Stub() {
 
     @Keep
-    constructor(context: Context)
+    constructor(context: Context) : this()
 
     override fun destroy() {
         System.exit(0)
