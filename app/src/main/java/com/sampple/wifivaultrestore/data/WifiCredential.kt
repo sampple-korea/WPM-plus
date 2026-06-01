@@ -30,7 +30,7 @@ data class WifiCredential(
 
     val canRestore: Boolean
         get() = security.any { it == SecurityType.OPEN || it == SecurityType.OWE } ||
-            (security.any { it == SecurityType.WPA2 || it == SecurityType.WPA3 } && hasPassword)
+            (security.any { it == SecurityType.WPA2 || it == SecurityType.WPA3 } && password.isValidWpaPassphrase())
 
     val redactedSummary: String
         get() = buildString {
@@ -82,6 +82,11 @@ data class WifiCredential(
                 .take(24)
         }
     }
+}
+
+private fun String?.isValidWpaPassphrase(): Boolean {
+    val value = this ?: return false
+    return value.length in 8..63 && value.all { it.code in 32..126 }
 }
 
 enum class CredentialSource {

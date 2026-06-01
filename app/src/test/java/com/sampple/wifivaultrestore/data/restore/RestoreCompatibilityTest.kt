@@ -46,6 +46,7 @@ class RestoreCompatibilityTest {
         assertFalse(credential("Corp", setOf(SecurityType.EAP), "password").canRestore)
         assertFalse(credential("Legacy", setOf(SecurityType.WEP), "password").canRestore)
         assertFalse(credential("Office", setOf(SecurityType.WPA2), null).canRestore)
+        assertFalse(credential("Short", setOf(SecurityType.WPA2), "short").canRestore)
         assertTrue(credential("Office", setOf(SecurityType.WPA2), "secretpass").canRestore)
     }
 
