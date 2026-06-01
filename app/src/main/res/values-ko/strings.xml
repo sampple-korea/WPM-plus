@@ -31,6 +31,7 @@
     <string name="action_extract_system">시스템에서 추출</string>
     <string name="action_restore_selected">선택 항목 복원</string>
     <string name="status_unlocked">금고 열림</string>
+    <string name="status_recovered_vault">잠긴 이전 금고를 보관하고 복구됨</string>
     <string name="empty_vault">아직 금고에 저장된 네트워크가 없습니다.</string>
     <string name="empty_vault_body">네트워크를 직접 추가하거나, 파일을 가져오거나, Wi‑Fi QR을 붙여넣거나, 이 기기에서 추출해 시작하세요.</string>
     <string name="empty_filtered">이 조건에 맞는 네트워크가 없습니다.</string>
@@ -53,6 +54,7 @@
     <string name="message_password_copied">비밀번호를 민감한 클립보드 항목으로 복사했습니다.</string>
     <string name="message_share_sheet_title">Wi‑Fi 정보 공유</string>
     <string name="message_vault_open_failed">금고를 열 수 없습니다.</string>
+    <string name="message_locked_vault_archived">이전 잠긴 금고를 %1$s 파일로 보관했습니다.</string>
     <string name="message_import_success">가져오기 완료. 금고 항목: %1$d개.</string>
     <string name="message_import_failed">가져오기에 실패했습니다.</string>
     <string name="message_import_too_large">가져오기 파일이 너무 큽니다.</string>
@@ -147,4 +149,6 @@
     <string name="credential_autojoin">자동 연결</string>
     <string name="delete_dialog_title">%1$s 삭제?</string>
     <string name="delete_dialog_body">로컬 암호화 금고에서만 제거합니다. Android에 저장된 네트워크는 변경하지 않습니다.</string>
+    <string name="locked_vault_recovery_title">이전 금고 보관됨</string>
+    <string name="locked_vault_recovery_body">Android Keystore가 이전 금고를 열 수 없어 WPM+가 %1$s 파일로 보존하고 새 금고를 시작했습니다. 나중에 확인하거나 마이그레이션하려면 이 파일을 유지하세요.</string>
 </resources>

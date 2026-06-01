@@ -119,11 +119,12 @@ fun parseSecurityToken(raw: String): SecurityType {
     return when {
         token.isEmpty() -> SecurityType.UNKNOWN
         token == "OPEN" || token == "NONE" || token == "NOPASS" -> SecurityType.OPEN
-        token == "OWE" -> SecurityType.OWE
+        token == "OWE" || token == "SECURITY_TYPE_OWE" -> SecurityType.OWE
         token == "WPA" || token == "WPA2" || token == "WPA-PSK" || token == "PSK" -> SecurityType.WPA2
         token == "SAE" || token == "WPA3" -> SecurityType.WPA3
         token == "WEP" -> SecurityType.WEP
         token.contains("EAP") || token.contains("ENTERPRISE") -> SecurityType.EAP
+        token.contains("OWE") -> SecurityType.OWE
         token.contains("WPA3") || token.contains("SAE") -> SecurityType.WPA3
         token.contains("WPA") || token.contains("PSK") -> SecurityType.WPA2
         else -> SecurityType.UNKNOWN

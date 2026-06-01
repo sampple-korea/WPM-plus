@@ -12,6 +12,7 @@ data class AppState(
     val busy: Boolean = false,
     val message: String? = null,
     val shizuku: ShizukuState = ShizukuState(running = false, permissionGranted = false),
+    val lockedVaultBackupName: String? = null,
     val lastExtraction: ExtractionOutcome? = null,
     val restorePlan: RestorePlan = RestorePlan(emptyList()),
     val restoreSession: RestoreSession? = null,

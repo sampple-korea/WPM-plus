@@ -65,9 +65,7 @@ object CrashReporter {
                 "$key=[redacted]"
             }
         }
-        return WIFI_QR_PASSWORD_PATTERN.replace(redactedKeyValues) { match ->
-            "${match.groups[1]?.value.orEmpty()}[redacted]"
-        }
+        return redactWifiQrPasswords(redactedKeyValues)
     }
 
     private val REDACTION_PATTERNS = listOf(
@@ -75,5 +73,30 @@ object CrashReporter {
         Regex("(?i)\\\"(password|passphrase|psk|preSharedKey)\\\"\\s*:\\s*\\\"([^\\\"]*)\\\""),
     )
 
-    private val WIFI_QR_PASSWORD_PATTERN = Regex("(?i)(WIFI:[^\\n\\r]*?;P:)([^;\\n\\r]*)")
+    private fun redactWifiQrPasswords(text: String): String {
+        return text.lineSequence().joinToString("\n") { line ->
+            val wifiStart = line.indexOf("WIFI:", ignoreCase = true)
+            val passwordMarker = line.indexOf(";P:", startIndex = wifiStart.coerceAtLeast(0), ignoreCase = true)
+            if (wifiStart < 0 || passwordMarker < 0) return@joinToString line
+
+            val valueStart = passwordMarker + 3
+            val valueEnd = findWifiQrFieldEnd(line, valueStart)
+            line.replaceRange(valueStart, valueEnd, "[redacted]")
+        }
+    }
+
+    private fun findWifiQrFieldEnd(value: String, start: Int): Int {
+        var index = start
+        var escaped = false
+        while (index < value.length) {
+            val char = value[index]
+            when {
+                escaped -> escaped = false
+                char == '\\' -> escaped = true
+                char == ';' -> return index
+            }
+            index += 1
+        }
+        return value.length
+    }
 }

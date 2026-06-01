@@ -11,6 +11,7 @@ class CrashReporterTest {
             password: cafe-secret
             {"psk":"json-secret"}
             WIFI:T:WPA;S:Cafe;P:qr-secret;H:false;;
+            WIFI:T:WPA;S:Escaped;P:pa\;ss;H:false;;
         """.trimIndent()
 
         val redacted = CrashReporter.redactSecretsForReport(report)
@@ -18,6 +19,8 @@ class CrashReporterTest {
         assertFalse(redacted.contains("cafe-secret"))
         assertFalse(redacted.contains("json-secret"))
         assertFalse(redacted.contains("qr-secret"))
+        assertFalse(redacted.contains("pa\\;ss"))
+        assertFalse(redacted.contains("ss;H:false"))
         assertTrue(redacted.contains("password=[redacted]"))
         assertTrue(redacted.contains("psk=[redacted]"))
         assertTrue(redacted.contains("P:[redacted]"))

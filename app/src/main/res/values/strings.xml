@@ -31,6 +31,7 @@
     <string name="action_extract_system">Extract from system</string>
     <string name="action_restore_selected">Restore selected</string>
     <string name="status_unlocked">Vault unlocked</string>
+    <string name="status_recovered_vault">Recovered with an archived locked vault</string>
     <string name="empty_vault">No saved networks in the vault yet.</string>
     <string name="empty_vault_body">Start by adding a network, importing a file, pasting a Wi‑Fi QR payload, or extracting from this device.</string>
     <string name="empty_filtered">No networks match this view.</string>
@@ -53,6 +54,7 @@
     <string name="message_password_copied">Password copied as sensitive clipboard content.</string>
     <string name="message_share_sheet_title">Share Wi‑Fi details</string>
     <string name="message_vault_open_failed">Vault could not be opened.</string>
+    <string name="message_locked_vault_archived">Previous locked vault was archived as %1$s.</string>
     <string name="message_import_success">Import complete. Total vault entries: %1$d.</string>
     <string name="message_import_failed">Import failed.</string>
     <string name="message_import_too_large">Import file is too large.</string>
@@ -147,4 +149,6 @@
     <string name="credential_autojoin">auto-join</string>
     <string name="delete_dialog_title">Delete %1$s?</string>
     <string name="delete_dialog_body">This removes the network from the local encrypted vault. Android saved networks are not changed.</string>
+    <string name="locked_vault_recovery_title">Previous vault archived</string>
+    <string name="locked_vault_recovery_body">Android Keystore could not unlock the old vault, so WPM+ preserved it as %1$s and started a fresh vault. Keep this file if you want to inspect or migrate it later.</string>
 </resources>

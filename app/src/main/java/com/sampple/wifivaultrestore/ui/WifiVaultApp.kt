@@ -70,6 +70,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -86,6 +87,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.sampple.wifivaultrestore.R
 import com.sampple.wifivaultrestore.data.CredentialSource
@@ -135,6 +139,7 @@ private enum class CredentialFilter(val labelRes: Int) {
 fun WifiVaultApp(viewModel: MainViewModel = viewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val importFailedMessage = stringResource(R.string.message_import_failed)
@@ -151,6 +156,16 @@ fun WifiVaultApp(viewModel: MainViewModel = viewModel()) {
     var importPassword by rememberSaveable { mutableStateOf("") }
     var pendingExport by remember { mutableStateOf<PendingExport?>(null) }
     val destinations = Destination.entries
+
+    DisposableEffect(lifecycleOwner, viewModel) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                viewModel.onAppResumed()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
 
     val importLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) {
@@ -440,8 +455,15 @@ private fun VaultPane(
         item {
             SectionHeader(
                 title = stringResource(R.string.headline_vault),
-                subtitle = stringResource(R.string.status_unlocked),
+                subtitle = if (state.lockedVaultBackupName == null) {
+                    stringResource(R.string.status_unlocked)
+                } else {
+                    stringResource(R.string.status_recovered_vault)
+                },
             )
+        }
+        state.lockedVaultBackupName?.let { backupName ->
+            item { LockedVaultRecoveryCard(backupName = backupName) }
         }
         item { SummaryGrid(plan = plan) }
         item {
@@ -495,6 +517,23 @@ private fun VaultPane(
                 )
                 HorizontalDivider()
             }
+        }
+    }
+}
+
+@Composable
+private fun LockedVaultRecoveryCard(backupName: String) {
+    Surface(
+        tonalElevation = 2.dp,
+        shape = MaterialTheme.shapes.small,
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            Text(stringResource(R.string.locked_vault_recovery_title), fontWeight = FontWeight.SemiBold)
+            Text(stringResource(R.string.locked_vault_recovery_body, backupName))
         }
     }
 }
@@ -1083,7 +1122,6 @@ private fun ManualCredentialDialog(
     val selectedSecurity = securityChoices.firstOrNull { it.key == securityKey } ?: securityChoices.first()
     val security = selectedSecurity.security
     val passwordRequired = security.any { it == SecurityType.WPA2 || it == SecurityType.WPA3 }
-    val showPassword = passwordRequired || credential?.hasPassword == true
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(title) },
@@ -1103,7 +1141,7 @@ private fun ManualCredentialDialog(
                     label = { securityLabel(it.security) },
                     onSelected = { securityKey = it.key },
                 )
-                if (showPassword) {
+                if (passwordRequired) {
                     OutlinedTextField(
                         value = password,
                         onValueChange = { password = it },
@@ -1143,7 +1181,7 @@ private fun ManualCredentialDialog(
                     onSave(
                         ssid,
                         security,
-                        password.takeIf { showPassword && it.isNotBlank() },
+                        password.takeIf { passwordRequired && it.isNotBlank() },
                         hidden,
                         note.takeIf { it.isNotBlank() },
                     )

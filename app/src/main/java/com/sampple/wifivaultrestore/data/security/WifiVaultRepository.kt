@@ -14,13 +14,20 @@ import java.nio.file.AtomicMoveNotSupportedException
 import java.nio.file.Files
 import java.nio.file.StandardCopyOption
 
+data class VaultLoadResult(
+    val data: VaultData,
+    val lockedVaultBackupName: String? = null,
+)
+
 class WifiVaultRepository(context: Context) {
     private val appContext = context.applicationContext
     private val crypto = VaultCrypto()
     private val vaultFile: File = File(appContext.filesDir, "wifi-vault.enc.json")
 
-    suspend fun load(): VaultData = withContext(Dispatchers.IO) {
-        if (!vaultFile.exists()) return@withContext VaultData()
+    suspend fun load(): VaultData = loadWithStatus().data
+
+    suspend fun loadWithStatus(): VaultLoadResult = withContext(Dispatchers.IO) {
+        if (!vaultFile.exists()) return@withContext VaultLoadResult(VaultData())
         runCatching {
             val envelope = JSONObject(vaultFile.readText(Charsets.UTF_8))
             val blob = EncryptedBlob(
@@ -30,11 +37,15 @@ class WifiVaultRepository(context: Context) {
             )
             val plain = crypto.decrypt(blob)
             VaultData.fromJson(JSONObject(String(plain, Charsets.UTF_8)))
+                .let(::VaultLoadResult)
         }.getOrElse { error ->
             if (error is VaultLockedException) {
-                runCatching { archiveLockedVault(vaultFile, appContext.filesDir) }
+                val backup = runCatching { archiveLockedVault(vaultFile, appContext.filesDir) }
                     .getOrElse { throw error }
-                VaultData()
+                VaultLoadResult(
+                    data = VaultData(),
+                    lockedVaultBackupName = backup?.name,
+                )
             } else {
                 throw error
             }

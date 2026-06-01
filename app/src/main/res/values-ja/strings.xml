@@ -31,6 +31,7 @@
     <string name="action_extract_system">システムから抽出</string>
     <string name="action_restore_selected">選択項目を復元</string>
     <string name="status_unlocked">金庫は解除済み</string>
+    <string name="status_recovered_vault">ロックされた以前の金庫を保管して復旧しました</string>
     <string name="empty_vault">金庫に保存されたネットワークはまだありません。</string>
     <string name="empty_vault_body">ネットワークの手動追加、ファイル取り込み、Wi‑Fi QR の貼り付け、この端末からの抽出で開始できます。</string>
     <string name="empty_filtered">この表示に一致するネットワークはありません。</string>
@@ -53,6 +54,7 @@
     <string name="message_password_copied">パスワードを機密クリップボードとしてコピーしました。</string>
     <string name="message_share_sheet_title">Wi‑Fi 情報を共有</string>
     <string name="message_vault_open_failed">金庫を開けませんでした。</string>
+    <string name="message_locked_vault_archived">以前のロック済み金庫を %1$s として保管しました。</string>
     <string name="message_import_success">取り込み完了。金庫の項目: %1$d 件。</string>
     <string name="message_import_failed">取り込みに失敗しました。</string>
     <string name="message_import_too_large">取り込みファイルが大きすぎます。</string>
@@ -147,4 +149,6 @@
     <string name="credential_autojoin">自動接続</string>
     <string name="delete_dialog_title">%1$s を削除しますか?</string>
     <string name="delete_dialog_body">ローカルの暗号化金庫から削除します。Android に保存済みのネットワークは変更されません。</string>
+    <string name="locked_vault_recovery_title">以前の金庫を保管しました</string>
+    <string name="locked_vault_recovery_body">Android Keystore が古い金庫を解除できなかったため、WPM+ は %1$s として保存し、新しい金庫を開始しました。後で確認または移行したい場合はこのファイルを保持してください。</string>
 </resources>

@@ -31,6 +31,7 @@
     <string name="action_extract_system">Extraer del sistema</string>
     <string name="action_restore_selected">Restaurar selección</string>
     <string name="status_unlocked">Bóveda desbloqueada</string>
+    <string name="status_recovered_vault">Recuperada con una bóveda bloqueada archivada</string>
     <string name="empty_vault">Todavía no hay redes guardadas en la bóveda.</string>
     <string name="empty_vault_body">Empieza añadiendo una red, importando un archivo, pegando un QR de Wi‑Fi o extrayendo desde este dispositivo.</string>
     <string name="empty_filtered">No hay redes que coincidan con esta vista.</string>
@@ -53,6 +54,7 @@
     <string name="message_password_copied">Contraseña copiada como contenido sensible del portapapeles.</string>
     <string name="message_share_sheet_title">Compartir datos Wi‑Fi</string>
     <string name="message_vault_open_failed">No se pudo abrir la bóveda.</string>
+    <string name="message_locked_vault_archived">La bóveda bloqueada anterior se archivó como %1$s.</string>
     <string name="message_import_success">Importación completa. Entradas en la bóveda: %1$d.</string>
     <string name="message_import_failed">Error al importar.</string>
     <string name="message_import_too_large">El archivo de importación es demasiado grande.</string>
@@ -147,4 +149,6 @@
     <string name="credential_autojoin">auto-conexión</string>
     <string name="delete_dialog_title">¿Eliminar %1$s?</string>
     <string name="delete_dialog_body">Esto elimina la red de la bóveda cifrada local. Las redes guardadas en Android no cambian.</string>
+    <string name="locked_vault_recovery_title">Bóveda anterior archivada</string>
+    <string name="locked_vault_recovery_body">Android Keystore no pudo desbloquear la bóveda anterior, así que WPM+ la conservó como %1$s e inició una bóveda nueva. Conserva este archivo si quieres revisarlo o migrarlo después.</string>
 </resources>

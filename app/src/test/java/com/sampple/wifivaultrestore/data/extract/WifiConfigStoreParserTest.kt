@@ -32,4 +32,26 @@ class WifiConfigStoreParserTest {
         assertTrue(result.single().security.contains(SecurityType.WPA2))
         assertTrue(result.single().hidden)
     }
+
+    @Test
+    fun parsesEnhancedOpenConfigKey() {
+        val xml = """
+            <WifiConfigStoreData>
+              <NetworkList>
+                <Network>
+                  <WifiConfiguration>
+                    <string name="ConfigKey">&quot;Cafe&quot;SECURITY_TYPE_OWE</string>
+                    <string name="SSID">&quot;Cafe&quot;</string>
+                  </WifiConfiguration>
+                </Network>
+              </NetworkList>
+            </WifiConfigStoreData>
+        """.trimIndent()
+
+        val result = WifiConfigStoreParser.parse(xml, CredentialSource.ShizukuRoot)
+
+        assertEquals(1, result.size)
+        assertEquals("Cafe", result.single().ssid)
+        assertTrue(result.single().security.contains(SecurityType.OWE))
+    }
 }

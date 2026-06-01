@@ -20,13 +20,18 @@ class WpaSupplicantParserTest {
                 ssid="Guest"
                 key_mgmt=NONE
             }
+            network={
+                ssid="Cafe"
+                key_mgmt=OWE
+            }
         """.trimIndent()
 
         val result = WpaSupplicantParser.parse(conf, CredentialSource.RootFile)
 
-        assertEquals(2, result.size)
+        assertEquals(3, result.size)
         assertEquals("secretpass", result.first { it.ssid == "Office" }.password)
         assertTrue(result.first { it.ssid == "Office" }.hidden)
         assertTrue(result.first { it.ssid == "Guest" }.security.contains(SecurityType.OPEN))
+        assertTrue(result.first { it.ssid == "Cafe" }.security.contains(SecurityType.OWE))
     }
 }

@@ -19,7 +19,9 @@ import com.sampple.wifivaultrestore.data.report.OperationReport
 import com.sampple.wifivaultrestore.data.restore.RestoreCompatibility
 import com.sampple.wifivaultrestore.data.restore.RestoreSession
 import com.sampple.wifivaultrestore.data.security.WifiVaultRepository
+import com.sampple.wifivaultrestore.shizuku.ShizukuState
 import com.sampple.wifivaultrestore.shizuku.ShizukuCommandRunner
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -44,13 +46,17 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun refresh() {
         viewModelScope.launch {
-            runCatching { repository.load() }
-                .onSuccess { vault ->
+            runCatching { repository.loadWithStatus() }
+                .onSuccess { loadResult ->
                     _state.update {
                         it.copy(
-                            vault = vault,
+                            vault = loadResult.data,
                             loading = false,
                             shizuku = shizuku.state(),
+                            lockedVaultBackupName = loadResult.lockedVaultBackupName ?: it.lockedVaultBackupName,
+                            message = loadResult.lockedVaultBackupName?.let { backup ->
+                                string(R.string.message_locked_vault_archived, backup)
+                            } ?: it.message,
                         )
                     }
                 }
@@ -66,11 +72,25 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun requestShizukuPermission() {
         shizuku.requestPermission(SHIZUKU_PERMISSION_REQUEST_CODE)
-        _state.update { it.copy(shizuku = shizuku.state()) }
+        refreshShizukuState()
+        viewModelScope.launch {
+            repeat(SHIZUKU_PERMISSION_REFRESH_ATTEMPTS) {
+                delay(SHIZUKU_PERMISSION_REFRESH_DELAY_MILLIS)
+                refreshShizukuState()
+            }
+        }
     }
 
     fun refreshShizukuState() {
         _state.update { it.copy(shizuku = shizuku.state()) }
+    }
+
+    fun onAppResumed() {
+        val current = state.value.shizuku
+        val refreshed = shizuku.state()
+        if (refreshed.shouldReplace(current)) {
+            _state.update { it.copy(shizuku = refreshed) }
+        }
     }
 
     fun importBytes(fileName: String?, bytes: ByteArray, password: String? = null) {
@@ -349,6 +369,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     companion object {
         const val SHIZUKU_PERMISSION_REQUEST_CODE = 520
+        private const val SHIZUKU_PERMISSION_REFRESH_ATTEMPTS = 5
+        private const val SHIZUKU_PERMISSION_REFRESH_DELAY_MILLIS = 700L
     }
 
     private fun string(@StringRes id: Int, vararg args: Any): String {
@@ -358,4 +380,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             getApplication<Application>().getString(id, *args)
         }
     }
+}
+
+private fun ShizukuState.shouldReplace(current: ShizukuState): Boolean {
+    return running != current.running ||
+        permissionGranted != current.permissionGranted ||
+        uid != current.uid
 }

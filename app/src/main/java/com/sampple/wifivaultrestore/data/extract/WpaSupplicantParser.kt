@@ -16,6 +16,7 @@ object WpaSupplicantParser {
             val psk = values["psk"]?.unquoteSupplicantValue()?.takeIf { it != "*" && it.isNotBlank() }
             val keyManagement = values["key_mgmt"].orEmpty()
             val security = when {
+                keyManagement.contains("OWE", ignoreCase = true) -> setOf(SecurityType.OWE)
                 keyManagement.contains("NONE", ignoreCase = true) -> setOf(SecurityType.OPEN)
                 keyManagement.contains("SAE", ignoreCase = true) -> setOf(SecurityType.WPA3)
                 keyManagement.contains("WPA", ignoreCase = true) || !psk.isNullOrBlank() -> setOf(SecurityType.WPA2)
