@@ -2,8 +2,10 @@ package com.sampple.wifivaultrestore.ui.model
 
 import android.app.Application
 import android.provider.Settings
+import androidx.annotation.StringRes
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.sampple.wifivaultrestore.R
 import com.sampple.wifivaultrestore.data.CredentialSource
 import com.sampple.wifivaultrestore.data.SecurityType
 import com.sampple.wifivaultrestore.data.WifiCredential
@@ -54,9 +56,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     }
                 }
                 .onFailure { error ->
-                    _state.update {
-                        it.copy(loading = false, message = error.message ?: "Vault could not be opened.")
-                    }
+                    _state.update { it.copy(loading = false, message = error.message ?: string(R.string.message_vault_open_failed)) }
                 }
         }
     }
@@ -100,7 +100,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                         busy = false,
                         pendingImportBytes = null,
                         pendingImportFileName = null,
-                        message = "Imported ${vault.credentials.size} total vault entries.",
+                        message = string(R.string.message_import_success, vault.credentials.size),
                     )
                 }
             }.onFailure { error ->
@@ -119,7 +119,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                             busy = false,
                             pendingImportBytes = null,
                             pendingImportFileName = null,
-                            message = error.message ?: "Import failed.",
+                            message = error.message ?: string(R.string.message_import_failed),
                         )
                     }
                 }
@@ -164,9 +164,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 )
                 repository.upsertCredentials(listOf(credential))
             }.onSuccess { vault ->
-                _state.update { it.copy(vault = vault, busy = false, message = "Network saved.") }
+                _state.update { it.copy(vault = vault, busy = false, message = string(R.string.message_network_saved)) }
             }.onFailure { error ->
-                _state.update { it.copy(busy = false, message = error.message ?: "Could not save network.") }
+                _state.update { it.copy(busy = false, message = error.message ?: string(R.string.message_network_save_failed)) }
             }
         }
     }
@@ -175,10 +175,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             runCatching { repository.updateNote(credentialId, note) }
                 .onSuccess { vault ->
-                    _state.update { it.copy(vault = vault, message = "Note saved.") }
+                    _state.update { it.copy(vault = vault, message = string(R.string.message_note_saved)) }
                 }
                 .onFailure { error ->
-                    _state.update { it.copy(message = error.message ?: "Could not save note.") }
+                    _state.update { it.copy(message = error.message ?: string(R.string.message_note_failed)) }
                 }
         }
     }
@@ -218,7 +218,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                         busy = false,
                         lastExtraction = outcome,
                         shizuku = shizuku.state(),
-                        message = "Extracted ${outcome.credentials.size} entries; ${outcome.withPasswords} include passwords.",
+                        message = string(R.string.message_extract_success, outcome.credentials.size, outcome.withPasswords),
                     )
                 }
             }.onFailure { error ->
@@ -226,7 +226,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     it.copy(
                         busy = false,
                         shizuku = shizuku.state(),
-                        message = error.message ?: "Extraction failed.",
+                        message = error.message ?: string(R.string.message_extract_failed),
                     )
                 }
             }
@@ -245,7 +245,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     queue = restorable,
                     skipped = skipped,
                 ).nextBatch(),
-                message = if (restorable.isEmpty()) "No restorable networks." else null,
+                message = if (restorable.isEmpty()) string(R.string.message_no_restorable) else null,
             )
         }
     }
@@ -284,14 +284,19 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     alreadyExists = updated.alreadyExists,
                     failed = updated.failed,
                     skipped = updated.skipped,
-                    notes = listOf("Restored with Android ACTION_WIFI_ADD_NETWORKS in batches of 5."),
+                    notes = listOf(string(R.string.restore_report_note)),
                 )
                 val vault = repository.appendReport(report)
                 _state.update {
                     it.copy(
                         vault = vault,
                         restoreSession = updated,
-                        message = "Restore complete: ${updated.success} saved, ${updated.alreadyExists} already existed, ${updated.failed} failed.",
+                        message = string(
+                            R.string.message_restore_complete,
+                            updated.success,
+                            updated.alreadyExists,
+                            updated.failed,
+                        ),
                     )
                 }
             }
@@ -300,5 +305,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     companion object {
         const val SHIZUKU_PERMISSION_REQUEST_CODE = 520
+    }
+
+    private fun string(@StringRes id: Int, vararg args: Any): String {
+        return if (args.isEmpty()) {
+            getApplication<Application>().getString(id)
+        } else {
+            getApplication<Application>().getString(id, *args)
+        }
     }
 }

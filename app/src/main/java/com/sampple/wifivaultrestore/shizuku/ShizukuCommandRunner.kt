@@ -68,7 +68,7 @@ class ShizukuCommandRunner(private val context: Context) {
     }
 
     private suspend fun callService(call: (IShizukuShellService) -> String): ShellCommandResult {
-        runCatching {
+        return runCatching {
             withTimeout(SERVICE_TIMEOUT_MILLIS) {
                 val bound = bindService()
                 try {

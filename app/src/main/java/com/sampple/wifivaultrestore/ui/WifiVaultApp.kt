@@ -5,6 +5,7 @@ import android.content.ClipDescription
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.os.Build
 import android.os.PersistableBundle
 import android.provider.Settings
@@ -22,8 +23,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Assessment
 import androidx.compose.material.icons.rounded.ContentCopy
 import androidx.compose.material.icons.rounded.EditNote
@@ -33,6 +36,7 @@ import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.icons.rounded.Restore
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.Security
+import androidx.compose.material.icons.rounded.Share
 import androidx.compose.material.icons.rounded.UploadFile
 import androidx.compose.material.icons.rounded.Visibility
 import androidx.compose.material.icons.rounded.VisibilityOff
@@ -41,11 +45,13 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.ListItem
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.OutlinedButton
@@ -63,6 +69,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -73,15 +80,22 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.sampple.wifivaultrestore.R
+import com.sampple.wifivaultrestore.data.CredentialSource
+import com.sampple.wifivaultrestore.data.SecurityType
 import com.sampple.wifivaultrestore.data.WifiCredential
 import com.sampple.wifivaultrestore.data.report.OperationKind
 import com.sampple.wifivaultrestore.data.report.OperationReport
+import com.sampple.wifivaultrestore.data.restore.RestoreCompatibility
+import com.sampple.wifivaultrestore.data.restore.RestorePlan
+import com.sampple.wifivaultrestore.data.restore.RestoreSkipReason
 import com.sampple.wifivaultrestore.data.restore.WifiRestoreIntentFactory
 import com.sampple.wifivaultrestore.data.securityLabel
+import com.sampple.wifivaultrestore.data.share.WifiShareFormatter
 import com.sampple.wifivaultrestore.shizuku.PrivilegeMode
 import com.sampple.wifivaultrestore.ui.model.AppState
 import com.sampple.wifivaultrestore.ui.model.MainViewModel
 import kotlinx.coroutines.launch
+import java.io.ByteArrayOutputStream
 
 private data class PendingExport(
     val bytes: ByteArray,
@@ -90,9 +104,17 @@ private data class PendingExport(
 
 private enum class Destination(val labelRes: Int) {
     Vault(R.string.nav_vault),
-    Extract(R.string.nav_extract),
+    Add(R.string.nav_add),
     Restore(R.string.nav_restore),
-    Reports(R.string.nav_reports),
+    Activity(R.string.nav_activity),
+}
+
+private enum class CredentialFilter(val labelRes: Int) {
+    All(R.string.filter_all),
+    Restorable(R.string.filter_restorable),
+    MissingPassword(R.string.filter_missing_password),
+    Imported(R.string.filter_imported),
+    Extracted(R.string.filter_extracted),
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -102,19 +124,25 @@ fun WifiVaultApp(viewModel: MainViewModel = viewModel()) {
     val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
-    var selectedIndex by remember { mutableIntStateOf(0) }
-    var qrDialogOpen by remember { mutableStateOf(false) }
-    var qrText by remember { mutableStateOf("") }
-    var exportDialogOpen by remember { mutableStateOf(false) }
-    var importPassword by remember { mutableStateOf("") }
+    var selectedIndex by rememberSaveable { mutableIntStateOf(0) }
+    var qrDialogOpen by rememberSaveable { mutableStateOf(false) }
+    var qrText by rememberSaveable { mutableStateOf("") }
+    var manualDialogOpen by rememberSaveable { mutableStateOf(false) }
+    var exportDialogOpen by rememberSaveable { mutableStateOf(false) }
+    var importPassword by rememberSaveable { mutableStateOf("") }
     var pendingExport by remember { mutableStateOf<PendingExport?>(null) }
     val destinations = Destination.entries
 
     val importLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) {
-            val bytes = context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
-            if (bytes != null) {
-                viewModel.importBytes(uri.lastPathSegment, bytes)
+            runCatching {
+                context.readDocumentBytes(uri)
+            }.onSuccess { bytes ->
+                if (bytes != null) viewModel.importBytes(uri.lastPathSegment, bytes)
+            }.onFailure { error ->
+                scope.launch {
+                    snackbarHostState.showSnackbar(error.message ?: context.getString(R.string.message_import_failed))
+                }
             }
         }
     }
@@ -161,7 +189,7 @@ fun WifiVaultApp(viewModel: MainViewModel = viewModel()) {
                 title = { Text(stringResource(R.string.app_name)) },
                 actions = {
                     IconButton(onClick = viewModel::refresh) {
-                        Icon(Icons.Rounded.Refresh, contentDescription = null)
+                        Icon(Icons.Rounded.Refresh, contentDescription = stringResource(R.string.action_refresh))
                     }
                 },
             )
@@ -184,17 +212,19 @@ fun WifiVaultApp(viewModel: MainViewModel = viewModel()) {
             Destination.Vault -> VaultPane(
                 state = state,
                 padding = padding,
-                onImport = { importLauncher.launch(arrayOf("*/*")) },
                 onExport = { exportDialogOpen = true },
-                onPasteQr = { qrDialogOpen = true },
                 onPasswordCopied = {
                     scope.launch { snackbarHostState.showSnackbar(context.getString(R.string.message_password_copied)) }
                 },
+                onShare = context::shareCredential,
                 onUpdateNote = viewModel::updateNote,
             )
-            Destination.Extract -> ExtractPane(
+            Destination.Add -> AddPane(
                 state = state,
                 padding = padding,
+                onManual = { manualDialogOpen = true },
+                onImport = { importLauncher.launch(arrayOf("*/*")) },
+                onPasteQr = { qrDialogOpen = true },
                 onRefresh = viewModel::refreshShizukuState,
                 onRequestPermission = viewModel::requestShizukuPermission,
                 onExtract = viewModel::extractSystem,
@@ -204,8 +234,18 @@ fun WifiVaultApp(viewModel: MainViewModel = viewModel()) {
                 padding = padding,
                 onRestore = viewModel::startRestore,
             )
-            Destination.Reports -> ReportsPane(state = state, padding = padding)
+            Destination.Activity -> ActivityPane(state = state, padding = padding)
         }
+    }
+
+    if (manualDialogOpen) {
+        ManualCredentialDialog(
+            onDismiss = { manualDialogOpen = false },
+            onSave = { ssid, security, password, hidden, note ->
+                viewModel.saveManualCredential(ssid, security, password, hidden, note)
+                manualDialogOpen = false
+            },
+        )
     }
 
     if (qrDialogOpen) {
@@ -347,27 +387,32 @@ fun WifiVaultApp(viewModel: MainViewModel = viewModel()) {
 private fun VaultPane(
     state: AppState,
     padding: PaddingValues,
-    onImport: () -> Unit,
     onExport: () -> Unit,
-    onPasteQr: () -> Unit,
     onPasswordCopied: () -> Unit,
+    onShare: (WifiCredential) -> Unit,
     onUpdateNote: (String, String?) -> Unit,
 ) {
-    var query by remember { mutableStateOf("") }
-    val filtered = remember(state.vault.credentials, query) {
-        val needle = query.trim().lowercase()
-        if (needle.isBlank()) {
-            state.vault.credentials
-        } else {
-            state.vault.credentials.filter { credential ->
-                credential.ssid.lowercase().contains(needle) ||
+    var query by rememberSaveable { mutableStateOf("") }
+    var filter by rememberSaveable { mutableStateOf(CredentialFilter.All) }
+    val plan = remember(state.vault.credentials) { RestoreCompatibility.plan(state.vault.credentials) }
+    val filtered = remember(state.vault.credentials, query, filter, plan) {
+        state.vault.credentials
+            .filter { credential -> credential.matchesFilter(filter, plan) }
+            .filter { credential ->
+                val needle = query.trim().lowercase()
+                needle.isBlank() ||
+                    credential.ssid.lowercase().contains(needle) ||
                     credential.note.orEmpty().lowercase().contains(needle) ||
                     securityLabel(credential.security).lowercase().contains(needle)
             }
-        }
     }
+
     ScreenColumn(padding) {
-        SectionHeader(stringResource(R.string.headline_vault), stringResource(R.string.vault_count, state.vault.credentials.size))
+        SectionHeader(
+            title = stringResource(R.string.headline_vault),
+            subtitle = stringResource(R.string.status_unlocked),
+        )
+        SummaryGrid(plan = plan)
         OutlinedTextField(
             value = query,
             onValueChange = { query = it },
@@ -376,72 +421,88 @@ private fun VaultPane(
             singleLine = true,
             modifier = Modifier.fillMaxWidth(),
         )
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Button(onClick = onImport, modifier = Modifier.weight(1f)) {
-                    Icon(Icons.Rounded.UploadFile, contentDescription = null)
-                    Spacer(Modifier.width(8.dp))
-                    Text(stringResource(R.string.action_import))
-                }
-                OutlinedButton(onClick = onExport, modifier = Modifier.weight(1f)) {
-                    Icon(Icons.Rounded.FileDownload, contentDescription = null)
-                    Spacer(Modifier.width(8.dp))
-                    Text(stringResource(R.string.action_export))
-                }
-            }
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                OutlinedButton(onClick = onPasteQr, modifier = Modifier.weight(1f)) {
-                    Text(stringResource(R.string.action_paste_qr))
-                }
-                AssistChip(
-                    onClick = {},
-                    label = { Text(stringResource(R.string.status_unlocked)) },
-                    modifier = Modifier.weight(1f),
-                )
+        FilterRow(
+            values = CredentialFilter.entries,
+            selected = filter,
+            label = { stringResource(it.labelRes) },
+            onSelected = { filter = it },
+        )
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+            OutlinedButton(onClick = onExport, modifier = Modifier.weight(1f)) {
+                Icon(Icons.Rounded.FileDownload, contentDescription = null)
+                Spacer(Modifier.width(8.dp))
+                Text(stringResource(R.string.action_export))
             }
         }
         CredentialList(
             credentials = filtered,
+            emptyText = if (state.vault.credentials.isEmpty()) {
+                stringResource(R.string.empty_vault)
+            } else {
+                stringResource(R.string.empty_filtered)
+            },
             onPasswordCopied = onPasswordCopied,
+            onShare = onShare,
             onUpdateNote = onUpdateNote,
         )
     }
 }
 
 @Composable
-private fun ExtractPane(
+private fun AddPane(
     state: AppState,
     padding: PaddingValues,
+    onManual: () -> Unit,
+    onImport: () -> Unit,
+    onPasteQr: () -> Unit,
     onRefresh: () -> Unit,
     onRequestPermission: () -> Unit,
     onExtract: () -> Unit,
 ) {
     ScreenColumn(padding) {
-        SectionHeader(stringResource(R.string.headline_extract), stringResource(R.string.extract_note))
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        SectionHeader(
+            title = stringResource(R.string.headline_add),
+            subtitle = stringResource(R.string.extract_note),
+        )
+        ActionPanel(
+            title = stringResource(R.string.action_add_manual),
+            body = stringResource(R.string.add_manual_body),
+            icon = Icons.Rounded.Add,
+            onClick = onManual,
+        )
+        ActionPanel(
+            title = stringResource(R.string.action_import),
+            body = stringResource(R.string.add_import_body),
+            icon = Icons.Rounded.UploadFile,
+            onClick = onImport,
+        )
+        ActionPanel(
+            title = stringResource(R.string.action_paste_qr),
+            body = stringResource(R.string.add_qr_body),
+            icon = Icons.Rounded.ContentCopy,
+            onClick = onPasteQr,
+        )
+        ActionPanel(
+            title = stringResource(R.string.action_extract_system),
+            body = stringResource(R.string.add_extract_body),
+            icon = Icons.Rounded.FileDownload,
+            onClick = onExtract,
+            enabled = state.shizuku.running && state.shizuku.permissionGranted && !state.busy,
+        )
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
             AssistChip(onClick = onRefresh, label = { Text(shizukuLabel(state)) })
-            OutlinedButton(onClick = onRequestPermission, modifier = Modifier.fillMaxWidth()) {
+            OutlinedButton(onClick = onRequestPermission, modifier = Modifier.weight(1f)) {
                 Text(stringResource(R.string.action_request_shizuku))
             }
         }
-        Button(
-            onClick = onExtract,
-            enabled = state.shizuku.running && state.shizuku.permissionGranted,
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Text(stringResource(R.string.action_extract_system))
-        }
         state.lastExtraction?.let { outcome ->
             ListItem(
-                headlineContent = { Text("${outcome.credentials.size} entries extracted") },
+                headlineContent = { Text(stringResource(R.string.last_extraction_title)) },
                 supportingContent = {
-                    Text("${outcome.withPasswords} with passwords, ${outcome.withoutPasswords} without passwords")
+                    Column {
+                        Text(stringResource(R.string.extraction_summary, outcome.credentials.size))
+                        Text(stringResource(R.string.extraction_password_summary, outcome.withPasswords, outcome.withoutPasswords))
+                    }
                 },
             )
             outcome.notes.take(5).forEach { note ->
@@ -457,37 +518,130 @@ private fun RestorePane(
     padding: PaddingValues,
     onRestore: (List<WifiCredential>) -> Unit,
 ) {
+    val plan = remember(state.vault.credentials) { RestoreCompatibility.plan(state.vault.credentials) }
     ScreenColumn(padding) {
-        val restorable = state.vault.credentials.filter { it.canRestore }
-        SectionHeader(stringResource(R.string.headline_restore), stringResource(R.string.restorable_count, restorable.size))
+        SectionHeader(
+            title = stringResource(R.string.restore_review_title),
+            subtitle = stringResource(R.string.restore_review_body),
+        )
+        SummaryGrid(plan = plan)
         Button(
-            onClick = { onRestore(restorable) },
-            enabled = restorable.isNotEmpty() && state.restoreSession?.activeBatch == null,
+            onClick = { onRestore(state.vault.credentials) },
+            enabled = plan.supported.isNotEmpty() && state.restoreSession?.activeBatch == null,
+            modifier = Modifier.fillMaxWidth(),
         ) {
+            Icon(Icons.Rounded.Restore, contentDescription = null)
+            Spacer(Modifier.width(8.dp))
             Text(stringResource(R.string.action_restore_selected))
         }
         state.restoreSession?.let { session ->
             val progress = if (session.total == 0) 0f else session.submitted.toFloat() / session.total.toFloat()
             LinearProgressIndicator(progress = { progress }, modifier = Modifier.fillMaxWidth())
             ListItem(
-                headlineContent = { Text("${session.submitted} / ${session.total} submitted") },
+                headlineContent = { Text(stringResource(R.string.restore_progress_title, session.submitted, session.total)) },
                 supportingContent = {
-                    Text("${session.success} saved, ${session.alreadyExists} existing, ${session.failed} failed, ${session.skipped} skipped")
+                    Text(
+                        stringResource(
+                            R.string.restore_progress_body,
+                            session.success,
+                            session.alreadyExists,
+                            session.failed,
+                            session.skipped,
+                        ),
+                    )
                 },
             )
         }
-        CredentialList(restorable.take(30))
+        if (plan.skipped.isNotEmpty()) {
+            SectionHeader(
+                title = stringResource(R.string.restore_skipped_title),
+                subtitle = stringResource(R.string.summary_skipped, plan.skipped.size),
+            )
+            plan.skipped.take(12).forEach { item ->
+                ListItem(
+                    headlineContent = { Text(item.credential.ssid.ifBlank { stringResource(R.string.skip_blank_ssid) }) },
+                    supportingContent = { Text(skipReasonLabel(item.reason)) },
+                )
+                HorizontalDivider()
+            }
+        }
+        CredentialList(
+            credentials = plan.supportedCredentials.take(40),
+            emptyText = stringResource(R.string.empty_vault),
+        )
     }
 }
 
 @Composable
-private fun ReportsPane(state: AppState, padding: PaddingValues) {
+private fun ActivityPane(state: AppState, padding: PaddingValues) {
     ScreenColumn(padding) {
-        SectionHeader(stringResource(R.string.headline_reports), stringResource(R.string.report_count, state.vault.reports.size))
-        LazyColumn {
-            items(state.vault.reports, key = { it.id }) { report ->
-                ReportRow(report)
-                HorizontalDivider()
+        SectionHeader(
+            title = stringResource(R.string.headline_activity),
+            subtitle = stringResource(R.string.report_count, state.vault.reports.size),
+        )
+        if (state.vault.reports.isEmpty()) {
+            ListItem(headlineContent = { Text(stringResource(R.string.empty_activity)) })
+        } else {
+            LazyColumn {
+                items(state.vault.reports, key = { it.id }) { report ->
+                    ReportRow(report)
+                    HorizontalDivider()
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SummaryGrid(plan: RestorePlan) {
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+        MetricTile(stringResource(R.string.summary_total, plan.items.size), Modifier.weight(1f))
+        MetricTile(stringResource(R.string.summary_passwords, plan.items.count { it.credential.hasPassword }), Modifier.weight(1f))
+    }
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+        MetricTile(stringResource(R.string.summary_restorable, plan.supported.size), Modifier.weight(1f))
+        MetricTile(stringResource(R.string.summary_skipped, plan.skipped.size), Modifier.weight(1f))
+    }
+}
+
+@Composable
+private fun MetricTile(text: String, modifier: Modifier = Modifier) {
+    Surface(
+        tonalElevation = 1.dp,
+        shape = MaterialTheme.shapes.small,
+        modifier = modifier,
+    ) {
+        Text(
+            text = text,
+            fontWeight = FontWeight.Medium,
+            modifier = Modifier.padding(12.dp),
+        )
+    }
+}
+
+@Composable
+private fun ActionPanel(
+    title: String,
+    body: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    onClick: () -> Unit,
+    enabled: Boolean = true,
+) {
+    Surface(
+        tonalElevation = 1.dp,
+        shape = MaterialTheme.shapes.small,
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(enabled = enabled, onClick = onClick),
+    ) {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = Modifier.padding(14.dp),
+        ) {
+            Icon(icon, contentDescription = null)
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(title, fontWeight = FontWeight.SemiBold)
+                Text(body)
             }
         }
     }
@@ -496,11 +650,13 @@ private fun ReportsPane(state: AppState, padding: PaddingValues) {
 @Composable
 private fun CredentialList(
     credentials: List<WifiCredential>,
+    emptyText: String,
     onPasswordCopied: (() -> Unit)? = null,
+    onShare: ((WifiCredential) -> Unit)? = null,
     onUpdateNote: ((String, String?) -> Unit)? = null,
 ) {
     if (credentials.isEmpty()) {
-        ListItem(headlineContent = { Text(stringResource(R.string.empty_vault)) })
+        ListItem(headlineContent = { Text(emptyText) })
         return
     }
     LazyColumn {
@@ -508,6 +664,7 @@ private fun CredentialList(
             CredentialRow(
                 credential = credential,
                 onPasswordCopied = onPasswordCopied,
+                onShare = onShare,
                 onUpdateNote = onUpdateNote,
             )
             HorizontalDivider()
@@ -519,12 +676,13 @@ private fun CredentialList(
 private fun CredentialRow(
     credential: WifiCredential,
     onPasswordCopied: (() -> Unit)?,
+    onShare: ((WifiCredential) -> Unit)?,
     onUpdateNote: ((String, String?) -> Unit)?,
 ) {
     val context = LocalContext.current
-    var expanded by remember { mutableStateOf(false) }
-    var revealPassword by remember { mutableStateOf(false) }
-    var noteDialogOpen by remember { mutableStateOf(false) }
+    var expanded by rememberSaveable(credential.id) { mutableStateOf(false) }
+    var revealPassword by rememberSaveable(credential.id) { mutableStateOf(false) }
+    var noteDialogOpen by rememberSaveable(credential.id) { mutableStateOf(false) }
     ListItem(
         modifier = Modifier.clickable { expanded = !expanded },
         leadingContent = {
@@ -540,9 +698,14 @@ private fun CredentialRow(
                     listOf(
                         securityLabel(credential.security),
                         if (credential.hasPassword) stringResource(R.string.password_saved) else stringResource(R.string.password_missing),
-                        credential.source.name,
+                        sourceLabel(credential.source),
                     ).joinToString(" · "),
                 )
+                val flags = buildList {
+                    if (credential.hidden) add(stringResource(R.string.credential_hidden))
+                    if (credential.autoJoin) add(stringResource(R.string.credential_autojoin))
+                }
+                if (flags.isNotEmpty()) Text(flags.joinToString(" · "))
                 credential.note?.let { Text(it) }
                 if (expanded && credential.hasPassword) {
                     Text(
@@ -558,7 +721,9 @@ private fun CredentialRow(
                     IconButton(onClick = { revealPassword = !revealPassword }) {
                         Icon(
                             if (revealPassword) Icons.Rounded.VisibilityOff else Icons.Rounded.Visibility,
-                            contentDescription = null,
+                            contentDescription = stringResource(
+                                if (revealPassword) R.string.action_hide_password else R.string.action_reveal_password,
+                            ),
                         )
                     }
                     IconButton(
@@ -567,12 +732,17 @@ private fun CredentialRow(
                             onPasswordCopied?.invoke()
                         },
                     ) {
-                        Icon(Icons.Rounded.ContentCopy, contentDescription = null)
+                        Icon(Icons.Rounded.ContentCopy, contentDescription = stringResource(R.string.action_copy_password))
+                    }
+                }
+                if (onShare != null) {
+                    IconButton(onClick = { onShare(credential) }) {
+                        Icon(Icons.Rounded.Share, contentDescription = stringResource(R.string.action_share))
                     }
                 }
                 if (onUpdateNote != null) {
                     IconButton(onClick = { noteDialogOpen = true }) {
-                        Icon(Icons.Rounded.EditNote, contentDescription = null)
+                        Icon(Icons.Rounded.EditNote, contentDescription = stringResource(R.string.action_edit_note))
                     }
                 }
             }
@@ -594,14 +764,102 @@ private fun CredentialRow(
 @Composable
 private fun ReportRow(report: OperationReport) {
     val kind = when (report.kind) {
-        OperationKind.Import -> "Import"
-        OperationKind.Extract -> "Extract"
-        OperationKind.Restore -> "Restore"
+        OperationKind.Import -> stringResource(R.string.report_import)
+        OperationKind.Extract -> stringResource(R.string.report_extract)
+        OperationKind.Restore -> stringResource(R.string.report_restore)
     }
     ListItem(
         headlineContent = { Text(kind) },
         supportingContent = {
-            Text("${report.success} success · ${report.alreadyExists} existing · ${report.failed} failed · ${report.skipped} skipped")
+            Column {
+                Text(
+                    stringResource(
+                        R.string.report_summary,
+                        report.success,
+                        report.alreadyExists,
+                        report.failed,
+                        report.skipped,
+                    ),
+                )
+                report.notes.take(2).forEach { Text(it) }
+            }
+        },
+    )
+}
+
+@Composable
+private fun ManualCredentialDialog(
+    onDismiss: () -> Unit,
+    onSave: (String, SecurityType, String?, Boolean, String?) -> Unit,
+) {
+    var ssid by rememberSaveable { mutableStateOf("") }
+    var security by rememberSaveable { mutableStateOf(SecurityType.WPA2) }
+    var password by rememberSaveable { mutableStateOf("") }
+    var hidden by rememberSaveable { mutableStateOf(false) }
+    var note by rememberSaveable { mutableStateOf("") }
+    val passwordRequired = security == SecurityType.WPA2 || security == SecurityType.WPA3
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.manual_dialog_title)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                OutlinedTextField(
+                    value = ssid,
+                    onValueChange = { ssid = it },
+                    label = { Text(stringResource(R.string.manual_ssid_label)) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Text(stringResource(R.string.manual_security_label), fontWeight = FontWeight.Medium)
+                FilterRow(
+                    values = listOf(SecurityType.WPA2, SecurityType.WPA3, SecurityType.OPEN, SecurityType.OWE),
+                    selected = security,
+                    label = { it.name },
+                    onSelected = { security = it },
+                )
+                if (passwordRequired) {
+                    OutlinedTextField(
+                        value = password,
+                        onValueChange = { password = it },
+                        label = { Text(stringResource(R.string.manual_password_label)) },
+                        visualTransformation = PasswordVisualTransformation(),
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Checkbox(checked = hidden, onCheckedChange = { hidden = it })
+                    Text(stringResource(R.string.manual_hidden_label))
+                }
+                OutlinedTextField(
+                    value = note,
+                    onValueChange = { note = it },
+                    label = { Text(stringResource(R.string.note_label)) },
+                    minLines = 2,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                enabled = ssid.isNotBlank() && (!passwordRequired || password.isNotBlank()),
+                onClick = {
+                    onSave(
+                        ssid,
+                        security,
+                        password.takeIf { it.isNotBlank() },
+                        hidden,
+                        note.takeIf { it.isNotBlank() },
+                    )
+                },
+            ) {
+                Text(stringResource(R.string.action_save))
+            }
+        },
+        dismissButton = {
+            OutlinedButton(onClick = onDismiss) {
+                Text(stringResource(R.string.action_cancel))
+            }
         },
     )
 }
@@ -611,8 +869,8 @@ private fun ExportVaultDialog(
     onDismiss: () -> Unit,
     onConfirm: (Boolean, String?) -> Unit,
 ) {
-    var encrypted by remember { mutableStateOf(true) }
-    var password by remember { mutableStateOf("") }
+    var encrypted by rememberSaveable { mutableStateOf(true) }
+    var password by rememberSaveable { mutableStateOf("") }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.export_dialog_title)) },
@@ -662,7 +920,7 @@ private fun NoteDialog(
     onDismiss: () -> Unit,
     onSave: (String?) -> Unit,
 ) {
-    var note by remember(credential.id) { mutableStateOf(credential.note.orEmpty()) }
+    var note by rememberSaveable(credential.id) { mutableStateOf(credential.note.orEmpty()) }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.note_dialog_title, credential.ssid)) },
@@ -689,6 +947,24 @@ private fun NoteDialog(
 }
 
 @Composable
+private fun <T> FilterRow(
+    values: List<T>,
+    selected: T,
+    label: @Composable (T) -> String,
+    onSelected: (T) -> Unit,
+) {
+    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+        items(values) { value ->
+            FilterChip(
+                selected = selected == value,
+                onClick = { onSelected(value) },
+                label = { Text(label(value)) },
+            )
+        }
+    }
+}
+
+@Composable
 private fun ScreenColumn(
     padding: PaddingValues,
     content: @Composable ColumnScope.() -> Unit,
@@ -705,16 +981,12 @@ private fun ScreenColumn(
 
 @Composable
 private fun SectionHeader(title: String, subtitle: String) {
-    Surface(tonalElevation = 2.dp, shape = androidx.compose.material3.MaterialTheme.shapes.large) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp),
-        ) {
-            Text(title, fontWeight = FontWeight.SemiBold)
-            Text(subtitle)
-        }
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        Text(title, fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.titleMedium)
+        Text(subtitle, style = MaterialTheme.typography.bodyMedium)
     }
 }
 
@@ -724,16 +996,54 @@ private fun shizukuLabel(state: AppState): String {
         !state.shizuku.running -> stringResource(R.string.shizuku_not_running)
         state.shizuku.mode == PrivilegeMode.Root -> stringResource(R.string.shizuku_root)
         state.shizuku.mode == PrivilegeMode.Shell -> stringResource(R.string.shizuku_shell)
-        state.shizuku.permissionGranted -> "Shizuku uid ${state.shizuku.uid}"
-        else -> "Shizuku permission required"
+        state.shizuku.permissionGranted -> stringResource(R.string.shizuku_other, state.shizuku.uid ?: -1)
+        else -> stringResource(R.string.shizuku_permission_required)
+    }
+}
+
+@Composable
+private fun sourceLabel(source: CredentialSource): String {
+    return when (source) {
+        CredentialSource.Manual -> stringResource(R.string.source_manual)
+        CredentialSource.QuickShare -> stringResource(R.string.source_quick_share)
+        CredentialSource.Json -> stringResource(R.string.source_json)
+        CredentialSource.Csv -> stringResource(R.string.source_csv)
+        CredentialSource.WifiQr -> stringResource(R.string.source_wifi_qr)
+        CredentialSource.ShizukuShell -> stringResource(R.string.source_shizuku_shell)
+        CredentialSource.ShizukuRoot -> stringResource(R.string.source_shizuku_root)
+        CredentialSource.RootFile -> stringResource(R.string.source_root_file)
+        CredentialSource.SystemDiagnostic -> stringResource(R.string.source_system_diagnostic)
+    }
+}
+
+@Composable
+private fun skipReasonLabel(reason: RestoreSkipReason?): String {
+    return when (reason) {
+        RestoreSkipReason.BlankSsid -> stringResource(R.string.skip_blank_ssid)
+        RestoreSkipReason.MissingPassword -> stringResource(R.string.skip_missing_password)
+        RestoreSkipReason.UnsupportedEnterprise -> stringResource(R.string.skip_unsupported_enterprise)
+        RestoreSkipReason.UnsupportedWep -> stringResource(R.string.skip_unsupported_wep)
+        RestoreSkipReason.UnsupportedSecurity -> stringResource(R.string.skip_unsupported_security)
+        RestoreSkipReason.InvalidPassphrase -> stringResource(R.string.skip_invalid_passphrase)
+        null -> stringResource(R.string.skip_unsupported_security)
+    }
+}
+
+private fun WifiCredential.matchesFilter(filter: CredentialFilter, plan: RestorePlan): Boolean {
+    return when (filter) {
+        CredentialFilter.All -> true
+        CredentialFilter.Restorable -> plan.supported.any { it.credential.id == id }
+        CredentialFilter.MissingPassword -> !hasPassword
+        CredentialFilter.Imported -> source in setOf(CredentialSource.QuickShare, CredentialSource.Json, CredentialSource.Csv, CredentialSource.WifiQr)
+        CredentialFilter.Extracted -> source in setOf(CredentialSource.ShizukuShell, CredentialSource.ShizukuRoot, CredentialSource.RootFile, CredentialSource.SystemDiagnostic)
     }
 }
 
 private fun iconFor(destination: Destination) = when (destination) {
     Destination.Vault -> Icons.Rounded.Security
-    Destination.Extract -> Icons.Rounded.FileDownload
+    Destination.Add -> Icons.Rounded.Add
     Destination.Restore -> Icons.Rounded.Restore
-    Destination.Reports -> Icons.Rounded.Assessment
+    Destination.Activity -> Icons.Rounded.Assessment
 }
 
 private fun Context.copySensitivePassword(credential: WifiCredential) {
@@ -752,3 +1062,28 @@ private fun Context.copySensitiveText(label: String, value: String) {
     val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
     clipboard.setPrimaryClip(clip)
 }
+
+private fun Context.shareCredential(credential: WifiCredential) {
+    val intent = Intent(Intent.ACTION_SEND)
+        .setType("text/plain")
+        .putExtra(Intent.EXTRA_TEXT, WifiShareFormatter.shareText(credential))
+    startActivity(Intent.createChooser(intent, getString(R.string.message_share_sheet_title)))
+}
+
+private fun Context.readDocumentBytes(uri: Uri): ByteArray? {
+    return contentResolver.openInputStream(uri)?.use { input ->
+        val output = ByteArrayOutputStream()
+        val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+        var total = 0
+        while (true) {
+            val read = input.read(buffer)
+            if (read <= 0) break
+            total += read
+            require(total <= MAX_IMPORT_BYTES) { getString(R.string.message_import_too_large) }
+            output.write(buffer, 0, read)
+        }
+        output.toByteArray()
+    }
+}
+
+private const val MAX_IMPORT_BYTES = 16 * 1024 * 1024
