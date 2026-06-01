@@ -13,7 +13,7 @@ WPM+는 최신 Android 보안 정책 안에서 Wi‑Fi 자격 증명을 백업, 
 - 기기 간 이동을 위한 비밀번호 기반 암호화 WPM+ 내보내기 파일
 - Shizuku/Sui 기반 추출 엔진: privileged Wi‑Fi Manager API를 먼저 시도하고, 실패하면 shell 파일/진단으로 폴백
 - `Settings.ACTION_WIFI_ADD_NETWORKS`를 이용한 5개 단위 시스템 복원
-- 금고 UI의 검색, 비밀번호 보기, 민감 클립보드 복사, 메모
+- 금고 UI의 검색/필터, 수정/삭제, 비밀번호 보기, 민감 클립보드 복사, QR/공유, 메모
 - 앱 크래시 후 다음 실행에서 한 번만 표시되는 크래시 리포트 복사 팝업
 - 복원/가져오기/추출 결과 리포트
 - 비밀번호 값을 로그와 리포트에 남기지 않는 redaction 정책
@@ -44,11 +44,16 @@ Shizuku 문서:
 
 - Shizuku API: https://github.com/RikkaApps/Shizuku-API
 
-참고한 프로젝트:
+참고한 프로젝트와 앱:
 
 - Khh-vu의 WiFi Password Manager: https://github.com/Khh-vu/wifi-password-manager
+- VREM WiFi Analyzer: https://github.com/VREMSoftwareDevelopment/WiFiAnalyzer
+- Ubiquiti WiFiman: https://play.google.com/store/apps/details?id=com.ubnt.usurvey
+- NetSpot WiFi Analyzer: https://www.netspotapp.com/
+- Fing: https://www.fing.com/products/fing-app
+- Instabridge: https://instabridge.com/
 
-참고 앱에서는 추출 순서, 내보내기/불러오기 UX, 캐시 중심 금고 UI, 민감 클립보드 처리 아이디어를 확인했습니다. WPM+는 해당 아이디어를 자체 구조로 다시 구현했습니다.
+이 앱들은 제품 경계를 정하는 데 참고했습니다. WPM+는 개인 Wi‑Fi 자격 증명 관리에 맞는 금고, 가져오기/내보내기, QR/공유, 진단, 명확한 상태 표시만 채택합니다. 공개 핫스팟 지도, LAN/포트 스캐너, 히트맵, 속도 테스트, 광범위한 네트워크 보안 도구는 권한과 UI 복잡도를 키우고 신뢰 모델도 달라지므로 의도적으로 제외합니다.
 
 ## 현재 상태
 
@@ -61,13 +66,14 @@ Shizuku 문서:
 - Shizuku privileged Wi‑Fi Manager reader와 UserService 명령 실행기
 - Wi‑Fi config store XML 및 `wpa_supplicant.conf` 파서
 - WPM+ gzip 및 비밀번호 암호화 내보내기/불러오기 코덱
-- 금고 검색, 메모, 보기/복사 컨트롤, 크래시 리포트 복사 다이얼로그
+- 금고 검색/필터, 수정/삭제 생명주기, 메모, 보기/복사/공유 컨트롤, 크래시 리포트 복사 다이얼로그
+- 네트워크별 복원 가능 여부와 건너뜀 사유를 보여주는 복원 선택 검토
 - 5개 단위 복원 세션 모델과 UI 연결
 - GitHub Actions 빌드 워크플로
 
 남은 하드닝 작업:
 
-- 동적 UI 문구 전체 다국어화
+- 영어 free-text가 아닌 구조화/현지화된 추출 및 가져오기 진단
 - 제조사별 Wi‑Fi config 경로 확장
 - Samsung, Pixel, Xiaomi, Android Enterprise 프로필 테스트
 - 정식 금고 마이그레이션 정책

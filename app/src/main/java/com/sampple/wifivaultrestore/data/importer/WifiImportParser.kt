@@ -67,12 +67,12 @@ object WifiImportParser {
         rootArray.asSequence().forEachIndexed { index, raw ->
             val json = raw as? JSONObject
             if (json == null) {
-                skipped += ImportSkip(index, "JSON item is not an object")
+                skipped += ImportSkip(index, "import.json_item_not_object")
                 return@forEachIndexed
             }
             val credential = parseJsonCredential(json)
             if (credential == null) {
-                skipped += ImportSkip(index, "Missing SSID or unsupported security")
+                skipped += ImportSkip(index, "import.missing_ssid_or_security")
             } else {
                 credentials += credential
             }
@@ -107,7 +107,7 @@ object WifiImportParser {
 
     private fun parseCsv(text: String): ImportOutcome {
         val rows = Csv.readRows(text)
-        if (rows.isEmpty()) return ImportOutcome(emptyList(), listOf(ImportSkip(0, "Empty CSV")))
+        if (rows.isEmpty()) return ImportOutcome(emptyList(), listOf(ImportSkip(0, "import.empty_csv")))
 
         val header = rows.first().map { it.trim().lowercase() }
         val hasHeader = header.any { it in setOf("ssid", "security", "password") }
@@ -128,7 +128,7 @@ object WifiImportParser {
         dataRows.forEachIndexed { rowIndex, row ->
             val ssid = row.getOrNull(ssidIndex).orEmpty().trimControl()
             if (ssid.isBlank()) {
-                skipped += ImportSkip(rowIndex, "Missing SSID")
+                skipped += ImportSkip(rowIndex, "import.missing_ssid")
                 return@forEachIndexed
             }
             credentials += WifiCredential.create(
@@ -168,7 +168,7 @@ object WifiImportParser {
             val fields = parseWifiQrFields(block)
             val ssid = fields["S"].orEmpty().trimControl()
             if (ssid.isBlank()) {
-                skipped += ImportSkip(index, "Missing QR SSID")
+                skipped += ImportSkip(index, "import.missing_qr_ssid")
                 return@forEachIndexed
             }
             val security = parseSecuritySet(fields["T"].orEmpty())

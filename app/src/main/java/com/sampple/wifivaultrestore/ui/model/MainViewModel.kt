@@ -89,7 +89,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     total = outcome.importedCount + outcome.skippedCount,
                     success = outcome.importedCount,
                     skipped = outcome.skippedCount,
-                    notes = outcome.skipped.take(12).map { "${it.index}: ${it.reason}" },
+                    notes = outcome.skipped.take(12).map { "import.skip|${it.index}|${it.reason}" },
                 )
                 repository.appendReport(report)
                 vault.copy(reports = listOf(report) + vault.reports)
@@ -168,6 +168,51 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             }.onFailure { error ->
                 _state.update { it.copy(busy = false, message = error.message ?: string(R.string.message_network_save_failed)) }
             }
+        }
+    }
+
+    fun updateCredential(
+        originalId: String,
+        ssid: String,
+        security: SecurityType,
+        password: String?,
+        hidden: Boolean,
+        note: String?,
+    ) {
+        viewModelScope.launch {
+            _state.update { it.copy(busy = true) }
+            runCatching {
+                val original = state.value.vault.credentials.firstOrNull { it.id == originalId }
+                val credential = WifiCredential.create(
+                    ssid = ssid.trim(),
+                    security = setOf(security),
+                    password = password?.takeIf { it.isNotBlank() },
+                    hidden = hidden,
+                    note = note,
+                    source = original?.source ?: CredentialSource.Manual,
+                ).copy(
+                    createdAtMillis = original?.createdAtMillis ?: System.currentTimeMillis(),
+                    updatedAtMillis = System.currentTimeMillis(),
+                )
+                repository.replaceCredential(originalId, credential)
+            }.onSuccess { vault ->
+                _state.update { it.copy(vault = vault, busy = false, message = string(R.string.message_network_updated)) }
+            }.onFailure { error ->
+                _state.update { it.copy(busy = false, message = error.message ?: string(R.string.message_network_save_failed)) }
+            }
+        }
+    }
+
+    fun deleteCredential(credentialId: String) {
+        viewModelScope.launch {
+            _state.update { it.copy(busy = true) }
+            runCatching { repository.deleteCredential(credentialId) }
+                .onSuccess { vault ->
+                    _state.update { it.copy(vault = vault, busy = false, message = string(R.string.message_network_deleted)) }
+                }
+                .onFailure { error ->
+                    _state.update { it.copy(busy = false, message = error.message ?: string(R.string.message_network_delete_failed)) }
+                }
         }
     }
 
@@ -284,7 +329,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     alreadyExists = updated.alreadyExists,
                     failed = updated.failed,
                     skipped = updated.skipped,
-                    notes = listOf(string(R.string.restore_report_note)),
+                    notes = listOf("restore.android_batches"),
                 )
                 val vault = repository.appendReport(report)
                 _state.update {

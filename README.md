@@ -13,7 +13,7 @@ The project is built as a commercial-grade MVP:
 - Password-based encrypted WPM+ export files for moving vaults between devices
 - Shizuku/Sui extraction engine that tries the privileged Wi-Fi Manager API first, then falls back to shell-readable files and diagnostics
 - Android system restore flow using `Settings.ACTION_WIFI_ADD_NETWORKS` in batches of five
-- Search, password reveal, sensitive clipboard copy, and notes in the vault UI
+- Search, filter, edit, delete, password reveal, sensitive clipboard copy, QR/share, and notes in the vault UI
 - One-time crash report dialog on the next launch after an app crash
 - Restore/import/extract reports with redacted password handling
 - Material 3 Jetpack Compose UI
@@ -43,11 +43,16 @@ Shizuku docs:
 
 - Shizuku API: https://github.com/RikkaApps/Shizuku-API
 
-Reference reviewed:
+References reviewed:
 
 - WiFi Password Manager by Khh-vu: https://github.com/Khh-vu/wifi-password-manager
+- WiFi Analyzer by VREM: https://github.com/VREMSoftwareDevelopment/WiFiAnalyzer
+- Ubiquiti WiFiman: https://play.google.com/store/apps/details?id=com.ubnt.usurvey
+- NetSpot WiFi Analyzer: https://www.netspotapp.com/
+- Fing: https://www.fing.com/products/fing-app
+- Instabridge: https://instabridge.com/
 
-The reference app informed the extraction order, export/import ergonomics, cache-first UI ideas, and sensitive clipboard handling. WPM+ implements those ideas in its own code structure.
+These apps informed the product boundaries. WPM+ adopts the vault, import/export, QR/share, diagnostics, and clear status ideas that fit a private Wi-Fi credential manager. It deliberately avoids public hotspot maps, LAN/port scanners, heatmaps, speed tests, and broad network-security tools because those would add permissions, clutter, and a different trust model.
 
 ## Current Status
 
@@ -60,13 +65,14 @@ This repository is in active MVP development. Implemented so far:
 - Shizuku privileged Wi-Fi Manager reader and UserService command runner
 - System Wi-Fi extraction parser for Wi-Fi config store XML and `wpa_supplicant.conf`
 - WPM+ gzip and password-encrypted export/import codecs
-- Vault search, notes, reveal/copy controls, and crash-report copy dialog
+- Vault search/filter, edit/delete lifecycle, notes, reveal/copy/share controls, and crash-report copy dialog
+- Restore selection review with per-network eligibility and skip reasons
 - Batch restore session model and UI wiring
 - GitHub Actions build workflow
 
 Remaining hardening work:
 
-- Full UI copy localization for all dynamic text
+- Structured/localized extraction and import diagnostics instead of English free-text notes
 - More Android vendor config path coverage
 - Device testing across Samsung, Pixel, Xiaomi, and Android Enterprise profiles
 - Formal vault migration policy

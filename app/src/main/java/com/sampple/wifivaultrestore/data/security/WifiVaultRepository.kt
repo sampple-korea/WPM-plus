@@ -85,6 +85,24 @@ class WifiVaultRepository(context: Context) {
         return updated
     }
 
+    suspend fun replaceCredential(originalId: String, replacement: WifiCredential): VaultData {
+        val current = load()
+        val updatedCredentials = current.credentials
+            .filterNot { it.id == originalId || it.id == replacement.id }
+            .plus(replacement)
+            .sortedBy { it.ssid.lowercase() }
+        val updated = current.copy(credentials = updatedCredentials)
+        replace(updated)
+        return updated
+    }
+
+    suspend fun deleteCredential(credentialId: String): VaultData {
+        val current = load()
+        val updated = current.copy(credentials = current.credentials.filterNot { it.id == credentialId })
+        replace(updated)
+        return updated
+    }
+
     suspend fun appendReport(report: OperationReport): VaultData {
         val current = load()
         val updated = current.copy(reports = (listOf(report) + current.reports).take(100))

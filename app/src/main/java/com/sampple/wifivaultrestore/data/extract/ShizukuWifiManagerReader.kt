@@ -43,8 +43,8 @@ class ShizukuWifiManagerReader(private val context: Context) {
                 PrivilegedWifiManagerRead(
                     credentials = credentials,
                     notes = listOf(
-                        "Privileged Wi-Fi Manager API returned ${credentials.size} entries in ${mode.name} mode.",
-                        "${credentials.count { it.hasPassword }} entries included readable password fields.",
+                        SystemWifiExtractor.note("extract.privileged_success", credentials.size.toString(), mode.name),
+                        SystemWifiExtractor.note("extract.privileged_passwords", credentials.count { it.hasPassword }.toString()),
                     ),
                 )
             }
@@ -53,7 +53,7 @@ class ShizukuWifiManagerReader(private val context: Context) {
                 PrivilegedWifiManagerRead(
                     credentials = emptyList(),
                     notes = listOf(
-                        "Privileged Wi-Fi Manager API was not available: ${error.javaClass.simpleName}: ${error.message.orEmpty()}",
+                        SystemWifiExtractor.note("extract.privileged_unavailable", error.javaClass.simpleName),
                     ),
                 )
             }

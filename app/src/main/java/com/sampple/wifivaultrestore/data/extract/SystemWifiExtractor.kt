@@ -17,7 +17,7 @@ class SystemWifiExtractor(
             return ExtractionOutcome(
                 mode = PrivilegeMode.Unavailable,
                 credentials = emptyList(),
-                notes = listOf("Shizuku is not running or permission has not been granted."),
+                notes = listOf("extract.shizuku_unavailable"),
                 rawSourcesChecked = 0,
             )
         }
@@ -42,12 +42,12 @@ class SystemWifiExtractor(
 
         val fileResult = commandRunner.dumpWifiConfigFiles()
         if (fileResult.exitCode != 0 || fileResult.error.isNotBlank()) {
-            notes += "System config read failed: ${fileResult.error.ifBlank { "exit ${fileResult.exitCode}" }}"
+            notes += note("extract.config_read_failed", fileResult.error.ifBlank { "exit ${fileResult.exitCode}" })
         }
         val files = extractMarkedFiles(fileResult.output)
         sourcesChecked += CONFIG_PATH_COUNT
         if (files.isEmpty()) {
-            notes += "No readable Wi‑Fi config XML files were returned for ${mode.name}."
+            notes += note("extract.no_readable_xml", mode.name)
         } else {
             files.forEach { (path, xml) ->
                 val parsed = runCatching {
@@ -57,30 +57,30 @@ class SystemWifiExtractor(
                         WifiConfigStoreParser.parse(xml, source)
                     }
                 }
-                    .onFailure { notes += "Could not parse $path: ${it.javaClass.simpleName}" }
+                    .onFailure { notes += note("extract.parse_failed", path, it.javaClass.simpleName) }
                     .getOrDefault(emptyList())
                 parsed.forEach { credentials.mergeCredential(it) }
-                notes += "Parsed ${parsed.size} network entries from $path."
+                notes += note("extract.parsed_path", parsed.size.toString(), path)
             }
         }
 
         val listNetworks = commandRunner.listWifiNetworks()
         if (listNetworks.exitCode != 0 || listNetworks.error.isNotBlank()) {
-            notes += "cmd wifi list-networks failed: ${listNetworks.error.ifBlank { "exit ${listNetworks.exitCode}" }}"
+            notes += note("extract.cmd_list_failed", listNetworks.error.ifBlank { "exit ${listNetworks.exitCode}" })
         }
         sourcesChecked++
         parseCmdWifiListNetworks(listNetworks.output, source)
             .filterNot { credentials.containsKey(it.id) }
             .forEach { credentials[it.id] = it }
         if (listNetworks.output.contains("SecurityException", ignoreCase = true)) {
-            notes += "cmd wifi list-networks was denied by the platform."
+            notes += "extract.cmd_denied"
         }
 
         if (mode == PrivilegeMode.Shell && credentials.values.none { it.hasPassword }) {
-            notes += "ADB/Shizuku shell mode usually cannot read PSK values on production builds. Use Shizuku root/Sui for full password extraction."
+            notes += "extract.shell_password_limited"
         }
         if (mode == PrivilegeMode.Root && credentials.values.none { it.hasPassword }) {
-            notes += "Root mode was available, but no readable PreSharedKey values were found in known config files."
+            notes += "extract.root_no_passwords"
         }
 
         return ExtractionOutcome(
@@ -140,5 +140,9 @@ class SystemWifiExtractor(
         private const val MARKER_END = "__WVR_FILE_END__"
 
         private const val CONFIG_PATH_COUNT = 4
+
+        fun note(code: String, vararg args: String): String = (listOf(code) + args.map(::sanitizeArg)).joinToString("|")
+
+        private fun sanitizeArg(value: String): String = value.replace("|", "/").take(160)
     }
 }
