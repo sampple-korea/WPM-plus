@@ -5,6 +5,7 @@ import com.sampple.wifivaultrestore.data.SecurityType
 import com.sampple.wifivaultrestore.data.VaultData
 import com.sampple.wifivaultrestore.data.WifiCredential
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.ByteArrayOutputStream
@@ -62,6 +63,17 @@ class WifiImportParserTest {
         assertEquals("Cafe;Main", result.credentials.single().ssid)
         assertEquals("pa:ss", result.credentials.single().password)
         assertTrue(result.credentials.single().hidden)
+    }
+
+    @Test
+    fun dropsPasswordsFromPasswordlessSecurityImports() {
+        val json = """{"ssid":"Guest","security":"OPEN","password":"legacy-open-secret"}"""
+        val csv = "ssid,security,password\nEnhanced,OWE,legacy-owe-secret"
+        val qr = "WIFI:T:nopass;S:Lobby;P:legacy-qr-secret;;"
+
+        assertNull(WifiImportParser.parseText(json).credentials.single().password)
+        assertNull(WifiImportParser.parseText(csv).credentials.single().password)
+        assertNull(WifiImportParser.parseText(qr).credentials.single().password)
     }
 
     @Test

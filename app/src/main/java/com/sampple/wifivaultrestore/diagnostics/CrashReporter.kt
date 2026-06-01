@@ -78,27 +78,42 @@ object CrashReporter {
     }
 
     private val KEY_VALUE_SECRET_PATTERN = Regex("(?i)\\b(password|passphrase|psk|preSharedKey)(\\s*[:=]\\s*).*$")
-    private val JSON_SECRET_PATTERN = Regex("(?i)\"(password|passphrase|psk|preSharedKey)\"\\s*:\\s*\"[^\"]*\"")
+    private val JSON_SECRET_PATTERN = Regex("(?i)\"(password|passphrase|psk|preSharedKey)\"\\s*:\\s*\"(?:\\\\.|[^\"\\\\])*\"")
 
     private fun redactWifiQrPasswords(text: String): String {
-        return text.lineSequence().joinToString("\n") { line ->
-            val wifiStart = line.indexOf("WIFI:", ignoreCase = true)
-            if (wifiStart < 0) return@joinToString line
-
-            val directPasswordMarker = line.indexOf("WIFI:P:", startIndex = wifiStart, ignoreCase = true)
-            val fieldPasswordMarker = line.indexOf(";P:", startIndex = wifiStart, ignoreCase = true)
-            val valueStart = when {
-                directPasswordMarker >= 0 -> directPasswordMarker + "WIFI:P:".length
-                fieldPasswordMarker >= 0 -> fieldPasswordMarker + 3
-                else -> return@joinToString line
-            }
-
-            val valueEnd = findWifiQrFieldEnd(line, valueStart)
-            line.replaceRange(valueStart, valueEnd, "[redacted]")
-        }
+        return text.lineSequence().joinToString("\n", transform = ::redactWifiQrPasswordLine)
     }
 
-    private fun findWifiQrFieldEnd(value: String, start: Int): Int {
+    private fun redactWifiQrPasswordLine(line: String): String {
+        val wifiStart = line.indexOf(WIFI_QR_PREFIX, ignoreCase = true)
+        if (wifiStart < 0) return line
+
+        val replacements = mutableListOf<IntRange>()
+        var fieldStart = wifiStart + WIFI_QR_PREFIX.length
+        while (fieldStart < line.length) {
+            if (line[fieldStart] == ';') {
+                fieldStart += 1
+                continue
+            }
+
+            val keyEnd = findWifiQrFieldEnd(line, fieldStart, ':') ?: break
+            val valueEnd = findWifiQrFieldEnd(line, keyEnd + 1, ';') ?: line.length
+            val key = line.substring(fieldStart, keyEnd)
+            if (key.equals("P", ignoreCase = true)) {
+                replacements += (keyEnd + 1) until valueEnd
+            }
+            fieldStart = valueEnd + 1
+        }
+        if (replacements.isEmpty()) return line
+
+        val redacted = StringBuilder(line)
+        replacements.asReversed().forEach { range ->
+            redacted.replace(range.first, range.last + 1, "[redacted]")
+        }
+        return redacted.toString()
+    }
+
+    private fun findWifiQrFieldEnd(value: String, start: Int, delimiter: Char): Int? {
         var index = start
         var escaped = false
         while (index < value.length) {
@@ -106,10 +121,12 @@ object CrashReporter {
             when {
                 escaped -> escaped = false
                 char == '\\' -> escaped = true
-                char == ';' -> return index
+                char == delimiter -> return index
             }
             index += 1
         }
-        return value.length
+        return null
     }
+
+    private const val WIFI_QR_PREFIX = "WIFI:"
 }

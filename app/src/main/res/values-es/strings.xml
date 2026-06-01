@@ -126,6 +126,8 @@
     <string name="restore_progress_title">Enviadas: %1$d / %2$d</string>
     <string name="restore_progress_body">Guardadas: %1$d; existentes: %2$d; fallidas: %3$d; omitidas: %4$d</string>
     <string name="restore_skipped_title">Requieren atención</string>
+    <string name="restore_none_supported_title">No hay redes listas para restaurar</string>
+    <string name="restore_none_supported_body">Revisa los elementos anteriores y añade las contraseñas que falten, o usa Ajustes de Android para los tipos de seguridad no admitidos.</string>
     <string name="skip_blank_ssid">Falta el nombre de la red</string>
     <string name="skip_missing_password">Se requiere contraseña</string>
     <string name="skip_unsupported_enterprise">Las redes Enterprise necesitan datos de certificado</string>

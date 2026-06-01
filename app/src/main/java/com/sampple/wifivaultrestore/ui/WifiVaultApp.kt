@@ -95,6 +95,7 @@ import com.sampple.wifivaultrestore.R
 import com.sampple.wifivaultrestore.data.CredentialSource
 import com.sampple.wifivaultrestore.data.SecurityType
 import com.sampple.wifivaultrestore.data.WifiCredential
+import com.sampple.wifivaultrestore.data.canCarryVaultPassword
 import com.sampple.wifivaultrestore.data.report.OperationKind
 import com.sampple.wifivaultrestore.data.report.OperationReport
 import com.sampple.wifivaultrestore.data.restore.RestoreCompatibility
@@ -679,10 +680,17 @@ private fun RestorePane(
         item { SummaryGrid(plan = plan) }
         item {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                AssistChip(
-                    onClick = {},
-                    label = { Text(stringResource(R.string.restore_selected_count, selectedIds.size)) },
-                )
+                Surface(
+                    color = MaterialTheme.colorScheme.secondaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                    shape = MaterialTheme.shapes.small,
+                ) {
+                    Text(
+                        text = stringResource(R.string.restore_selected_count, selectedIds.size),
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                        style = MaterialTheme.typography.labelLarge,
+                    )
+                }
                 OutlinedButton(
                     onClick = { selectedIds = plan.supportedCredentials.map { it.id } },
                     modifier = Modifier.weight(1f),
@@ -740,8 +748,15 @@ private fun RestorePane(
                 HorizontalDivider()
             }
         }
-        if (plan.supportedCredentials.isEmpty()) {
+        if (plan.items.isEmpty()) {
             item { ListItem(headlineContent = { Text(stringResource(R.string.empty_vault)) }) }
+        } else if (plan.supportedCredentials.isEmpty()) {
+            item {
+                ListItem(
+                    headlineContent = { Text(stringResource(R.string.restore_none_supported_title)) },
+                    supportingContent = { Text(stringResource(R.string.restore_none_supported_body)) },
+                )
+            }
         } else {
             items(plan.supportedCredentials, key = { it.id }) { credential ->
                 SelectableRestoreRow(
@@ -1121,6 +1136,7 @@ private fun ManualCredentialDialog(
     var note by rememberSaveable(credential?.id) { mutableStateOf(credential?.note.orEmpty()) }
     val selectedSecurity = securityChoices.firstOrNull { it.key == securityKey } ?: securityChoices.first()
     val security = selectedSecurity.security
+    val passwordCapable = security.canCarryVaultPassword()
     val passwordRequired = security.any { it == SecurityType.WPA2 || it == SecurityType.WPA3 }
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -1141,7 +1157,7 @@ private fun ManualCredentialDialog(
                     label = { securityLabel(it.security) },
                     onSelected = { securityKey = it.key },
                 )
-                if (passwordRequired) {
+                if (passwordCapable) {
                     OutlinedTextField(
                         value = password,
                         onValueChange = { password = it },
@@ -1181,7 +1197,7 @@ private fun ManualCredentialDialog(
                     onSave(
                         ssid,
                         security,
-                        password.takeIf { passwordRequired && it.isNotBlank() },
+                        password.takeIf { passwordCapable && it.isNotBlank() },
                         hidden,
                         note.takeIf { it.isNotBlank() },
                     )

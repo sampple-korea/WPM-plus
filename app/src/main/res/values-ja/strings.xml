@@ -126,6 +126,8 @@
     <string name="restore_progress_title">送信済み: %1$d / %2$d</string>
     <string name="restore_progress_body">保存: %1$d、既存: %2$d、失敗: %3$d、スキップ: %4$d</string>
     <string name="restore_skipped_title">確認が必要</string>
+    <string name="restore_none_supported_title">復元できる状態のネットワークがありません</string>
+    <string name="restore_none_supported_body">上の項目を確認し、不足しているパスワードを追加するか、未対応のセキュリティ方式は Android 設定で対応してください。</string>
     <string name="skip_blank_ssid">ネットワーク名がありません</string>
     <string name="skip_missing_password">パスワードが必要です</string>
     <string name="skip_unsupported_enterprise">Enterprise ネットワークには証明書情報が必要です</string>

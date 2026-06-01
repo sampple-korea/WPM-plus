@@ -126,6 +126,8 @@
     <string name="restore_progress_title">제출: %1$d / %2$d</string>
     <string name="restore_progress_body">저장: %1$d개, 기존: %2$d개, 실패: %3$d개, 건너뜀: %4$d개</string>
     <string name="restore_skipped_title">확인 필요</string>
+    <string name="restore_none_supported_title">복원 준비가 된 네트워크가 없습니다</string>
+    <string name="restore_none_supported_body">위 항목을 확인해 누락된 비밀번호를 추가하거나 지원되지 않는 보안 방식은 Android 설정에서 처리하세요.</string>
     <string name="skip_blank_ssid">네트워크 이름 없음</string>
     <string name="skip_missing_password">비밀번호 필요</string>
     <string name="skip_unsupported_enterprise">Enterprise 네트워크는 인증서 정보가 필요합니다</string>

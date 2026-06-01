@@ -4,6 +4,12 @@ Last updated: 2026-06-02
 
 WPM+ is a local Wi-Fi credential vault and restore utility by sampple-korea. The app is designed to work without a server, account, analytics SDK, advertising SDK, or the Android `INTERNET` permission.
 
+## Developer And Privacy Contact
+
+Developer: sampple-korea.
+
+Privacy inquiries can be submitted through the WPM+ GitHub issue tracker at https://github.com/sampple-korea/WPM-plus/issues with "Privacy" in the title, or through the contact channel shown on the WPM+ Google Play listing. Do not include Wi-Fi passwords, vault exports, or other secrets in public issue text.
+
 ## Data WPM+ Handles
 
 WPM+ can store Wi-Fi network names, security types, passwords, hidden-network flags, auto-join flags, notes, import/export records, restore reports, extraction diagnostics, and one-time local crash reports. This data is stored on the device in the app sandbox. The vault file is encrypted with Android Keystore-backed AES-GCM.

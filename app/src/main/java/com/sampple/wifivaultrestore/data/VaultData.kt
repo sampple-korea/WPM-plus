@@ -39,7 +39,7 @@ private object WifiCredentialJson {
             id = json.optString("id"),
             ssid = json.optString("ssid"),
             security = security,
-            password = json.optString("password").takeIf { it.isNotEmpty() },
+            password = json.optString("password").takeIf { security.canCarryVaultPassword() && it.isNotEmpty() },
             hidden = json.optBoolean("hidden", false),
             autoJoin = json.optBoolean("autoJoin", true),
             note = json.optString("note", json.optString("notes", "")).takeIf { it.isNotBlank() },

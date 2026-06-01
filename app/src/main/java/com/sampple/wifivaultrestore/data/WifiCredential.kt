@@ -62,7 +62,7 @@ data class WifiCredential(
                 id = stableId(ssid, normalizedSecurity, hidden),
                 ssid = ssid,
                 security = normalizedSecurity,
-                password = password?.takeIf { it.isNotEmpty() },
+                password = password?.takeIf { normalizedSecurity.canCarryVaultPassword() && it.isNotEmpty() },
                 hidden = hidden,
                 autoJoin = autoJoin,
                 note = note?.trim()?.takeIf { it.isNotEmpty() },
@@ -112,6 +112,10 @@ fun securityLabel(security: Set<SecurityType>): String {
     } else {
         ordered.joinToString("/") { it.name.uppercase(Locale.US) }
     }
+}
+
+internal fun Set<SecurityType>.canCarryVaultPassword(): Boolean {
+    return any { it == SecurityType.WPA2 || it == SecurityType.WPA3 || it == SecurityType.WEP || it == SecurityType.EAP }
 }
 
 fun parseSecurityToken(raw: String): SecurityType {

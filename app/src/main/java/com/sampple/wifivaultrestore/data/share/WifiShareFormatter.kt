@@ -2,6 +2,7 @@ package com.sampple.wifivaultrestore.data.share
 
 import com.sampple.wifivaultrestore.data.SecurityType
 import com.sampple.wifivaultrestore.data.WifiCredential
+import com.sampple.wifivaultrestore.data.canCarryVaultPassword
 
 object WifiShareFormatter {
     fun qrPayload(credential: WifiCredential): String {
@@ -19,7 +20,7 @@ object WifiShareFormatter {
             append("S:")
             append(escape(credential.ssid))
             append(';')
-            credential.password?.takeIf { it.isNotEmpty() }?.let { password ->
+            credential.password?.takeIf { credential.security.canCarryVaultPassword() && it.isNotEmpty() }?.let { password ->
                 append("P:")
                 append(escape(password))
                 append(';')

@@ -126,6 +126,8 @@
     <string name="restore_progress_title">Submitted: %1$d / %2$d</string>
     <string name="restore_progress_body">Saved: %1$d; existing: %2$d; failed: %3$d; skipped: %4$d</string>
     <string name="restore_skipped_title">Needs attention</string>
+    <string name="restore_none_supported_title">No networks are ready to restore</string>
+    <string name="restore_none_supported_body">Review the items above and add missing passwords or use Android settings for unsupported security types.</string>
     <string name="skip_blank_ssid">Missing network name</string>
     <string name="skip_missing_password">Password required</string>
     <string name="skip_unsupported_enterprise">Enterprise networks need certificate details</string>

@@ -4,6 +4,7 @@ import com.sampple.wifivaultrestore.data.CredentialSource
 import com.sampple.wifivaultrestore.data.SecurityType
 import com.sampple.wifivaultrestore.data.WifiCredential
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -37,5 +38,21 @@ class WifiShareFormatterTest {
 
         assertTrue(text.contains("WIFI:T:nopass;S:Guest;;"))
         assertTrue(text.contains("Lobby network"))
+    }
+
+    @Test
+    fun doesNotShareLegacyPasswordsForPasswordlessSecurity() {
+        val credential = WifiCredential(
+            id = "legacy-open",
+            ssid = "Guest",
+            security = setOf(SecurityType.OPEN),
+            password = "legacy-open-secret",
+        )
+
+        val payload = WifiShareFormatter.qrPayload(credential)
+
+        assertEquals("WIFI:T:nopass;S:Guest;;", payload)
+        assertFalse(payload.contains("legacy-open-secret"))
+        assertFalse(payload.contains("P:"))
     }
 }

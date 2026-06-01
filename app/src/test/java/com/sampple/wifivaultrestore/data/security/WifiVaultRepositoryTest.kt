@@ -1,6 +1,8 @@
 package com.sampple.wifivaultrestore.data.security
 
 import com.sampple.wifivaultrestore.data.SecurityType
+import com.sampple.wifivaultrestore.data.WifiCredential
+import com.sampple.wifivaultrestore.data.canCarryVaultPassword
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -41,5 +43,39 @@ class WifiVaultRepositoryTest {
         assertFalse(setOf(SecurityType.OPEN).canCarryVaultPassword())
         assertFalse(setOf(SecurityType.OWE).canCarryVaultPassword())
         assertFalse(setOf(SecurityType.OPEN, SecurityType.OWE).canCarryVaultPassword())
+    }
+
+    @Test
+    fun vaultMergePolicyClearsIncomingPasswordsForPasswordlessSecurity() {
+        val incoming = WifiCredential(
+            id = "legacy-open",
+            ssid = "Guest",
+            security = setOf(SecurityType.OPEN),
+            password = "legacy-open-secret",
+        )
+
+        val merged = incoming.withVaultMergePolicy(existing = null)
+
+        assertEquals(null, merged.password)
+    }
+
+    @Test
+    fun vaultMergePolicyKeepsExistingPasswordsOnlyForPasswordCapableSecurity() {
+        val existing = WifiCredential(
+            id = "enterprise",
+            ssid = "Corp",
+            security = setOf(SecurityType.EAP),
+            password = "enterprise-secret",
+            createdAtMillis = 100L,
+            updatedAtMillis = 100L,
+        )
+        val incoming = existing.copy(password = null, note = "updated")
+
+        val merged = incoming.withVaultMergePolicy(existing = existing, nowMillis = 200L)
+
+        assertEquals("enterprise-secret", merged.password)
+        assertEquals("updated", merged.note)
+        assertEquals(100L, merged.createdAtMillis)
+        assertEquals(200L, merged.updatedAtMillis)
     }
 }

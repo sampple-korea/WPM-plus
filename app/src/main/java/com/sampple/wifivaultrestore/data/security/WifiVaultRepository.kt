@@ -2,9 +2,9 @@ package com.sampple.wifivaultrestore.data.security
 
 import android.content.Context
 import android.util.Base64
-import com.sampple.wifivaultrestore.data.SecurityType
 import com.sampple.wifivaultrestore.data.VaultData
 import com.sampple.wifivaultrestore.data.WifiCredential
+import com.sampple.wifivaultrestore.data.canCarryVaultPassword
 import com.sampple.wifivaultrestore.data.report.OperationReport
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -68,16 +68,7 @@ class WifiVaultRepository(context: Context) {
         val byId = current.credentials.associateBy { it.id }.toMutableMap()
         newCredentials.forEach { credential ->
             val existing = byId[credential.id]
-            byId[credential.id] = if (existing == null) {
-                credential
-            } else {
-                credential.copy(
-                    password = credential.password ?: existing.password.takeIf { credential.security.canCarryVaultPassword() },
-                    note = credential.note ?: existing.note,
-                    createdAtMillis = existing.createdAtMillis,
-                    updatedAtMillis = System.currentTimeMillis(),
-                )
-            }
+            byId[credential.id] = credential.withVaultMergePolicy(existing)
         }
         val updated = current.copy(credentials = byId.values.sortedBy { it.ssid.lowercase() })
         replace(updated)
@@ -182,6 +173,23 @@ class WifiVaultRepository(context: Context) {
     }
 }
 
-internal fun Set<SecurityType>.canCarryVaultPassword(): Boolean {
-    return any { it == SecurityType.WPA2 || it == SecurityType.WPA3 || it == SecurityType.WEP || it == SecurityType.EAP }
+internal fun WifiCredential.withVaultMergePolicy(
+    existing: WifiCredential?,
+    nowMillis: Long = System.currentTimeMillis(),
+): WifiCredential {
+    val mergedPassword = if (security.canCarryVaultPassword()) {
+        password ?: existing?.password
+    } else {
+        null
+    }
+    return if (existing == null) {
+        copy(password = mergedPassword)
+    } else {
+        copy(
+            password = mergedPassword,
+            note = note ?: existing.note,
+            createdAtMillis = existing.createdAtMillis,
+            updatedAtMillis = nowMillis,
+        )
+    }
 }
