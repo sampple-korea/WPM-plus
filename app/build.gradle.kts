@@ -15,6 +15,17 @@ val useCiDebugSigning = listOf(
     ciDebugKeyPassword.orNull,
 ).all { !it.isNullOrBlank() } && ciDebugStoreFile.orNull?.let { rootProject.file(it).isFile } == true
 
+val releaseStoreFile = providers.environmentVariable("WPM_PLUS_RELEASE_STORE_FILE")
+val releaseStorePassword = providers.environmentVariable("WPM_PLUS_RELEASE_STORE_PASSWORD")
+val releaseKeyAlias = providers.environmentVariable("WPM_PLUS_RELEASE_KEY_ALIAS")
+val releaseKeyPassword = providers.environmentVariable("WPM_PLUS_RELEASE_KEY_PASSWORD")
+val useReleaseSigning = listOf(
+    releaseStoreFile.orNull,
+    releaseStorePassword.orNull,
+    releaseKeyAlias.orNull,
+    releaseKeyPassword.orNull,
+).all { !it.isNullOrBlank() } && releaseStoreFile.orNull?.let { rootProject.file(it).isFile } == true
+
 android {
     namespace = "com.sampple.wifivaultrestore"
     compileSdk = 36
@@ -42,12 +53,31 @@ android {
                 keyPassword = ciDebugKeyPassword.get()
             }
         }
+        if (useReleaseSigning) {
+            create("releaseUpload") {
+                storeFile = rootProject.file(releaseStoreFile.get())
+                storePassword = releaseStorePassword.get()
+                keyAlias = releaseKeyAlias.get()
+                keyPassword = releaseKeyPassword.get()
+            }
+        }
     }
 
     buildTypes {
         debug {
             if (useCiDebugSigning) {
                 signingConfig = signingConfigs.getByName("ciDebug")
+            }
+        }
+        release {
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
+            )
+            if (useReleaseSigning) {
+                signingConfig = signingConfigs.getByName("releaseUpload")
             }
         }
     }
@@ -78,7 +108,6 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.navigation.compose)
-    implementation(libs.hiddenapibypass)
     implementation(libs.shizuku.api)
     implementation(libs.shizuku.provider)
 

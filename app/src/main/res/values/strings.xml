@@ -21,6 +21,8 @@
     <string name="action_reveal_password">Reveal password</string>
     <string name="action_hide_password">Hide password</string>
     <string name="action_edit_note">Edit note</string>
+    <string name="action_more">More actions</string>
+    <string name="action_more_network">Actions for %1$s</string>
     <string name="action_refresh">Refresh</string>
     <string name="action_copy_log">Copy log</string>
     <string name="qr_dialog_title">Paste Wi‑Fi QR text</string>
@@ -30,8 +32,11 @@
     <string name="action_restore_selected">Restore selected</string>
     <string name="status_unlocked">Vault unlocked</string>
     <string name="empty_vault">No saved networks in the vault yet.</string>
+    <string name="empty_vault_body">Start by adding a network, importing a file, pasting a Wi‑Fi QR payload, or extracting from this device.</string>
     <string name="empty_filtered">No networks match this view.</string>
     <string name="empty_activity">No activity recorded yet.</string>
+    <string name="privacy_summary_title">Privacy</string>
+    <string name="privacy_summary_body">WPM+ keeps the vault and diagnostics on this device. Data leaves the app only when you export, share, or copy it.</string>
     <string name="summary_total">Total: %1$d</string>
     <string name="summary_passwords">Passwords: %1$d</string>
     <string name="summary_restorable">Restorable: %1$d</string>
@@ -71,9 +76,6 @@
     <string name="note_extract_cmd_denied">The platform denied the network list command.</string>
     <string name="note_extract_shell_password_limited">Shell mode usually cannot read saved passwords on production builds. Use Shizuku root/Sui for full extraction.</string>
     <string name="note_extract_root_no_passwords">Root mode was available, but no readable password values were found in known config files.</string>
-    <string name="note_extract_privileged_success">Privileged Wi‑Fi Manager API returned %1$s entries in %2$s mode.</string>
-    <string name="note_extract_privileged_passwords">Readable password fields: %1$s</string>
-    <string name="note_extract_privileged_unavailable">Privileged Wi‑Fi Manager API was not available: %1$s</string>
     <string name="note_import_skip">Import row %1$s skipped: %2$s</string>
     <string name="note_import_json_item_not_object">JSON item is not an object</string>
     <string name="note_import_missing_ssid_or_security">Missing SSID or unsupported security</string>
@@ -85,6 +87,7 @@
     <string name="message_export_failed">Vault export failed.</string>
     <string name="crash_dialog_title">Previous crash detected</string>
     <string name="crash_dialog_body">WPM+ crashed during the previous run. This report is shown only once so you can copy it for debugging.</string>
+    <string name="crash_report_hidden_notice">Sensitive values are redacted, and the raw report is not displayed on screen.</string>
     <string name="crash_clipboard_label">WPM+ crash report</string>
     <string name="crash_copied_message">Crash report copied.</string>
     <string name="export_dialog_title">Export vault</string>
@@ -112,7 +115,7 @@
     <string name="shizuku_root">Shizuku root mode</string>
     <string name="shizuku_permission_required">Shizuku permission required</string>
     <string name="shizuku_other">Shizuku uid %1$d</string>
-    <string name="extract_note">Normal apps cannot read saved Wi‑Fi passwords. Shizuku/root extraction tries system files and privileged diagnostics, then reports exactly what was available.</string>
+    <string name="extract_note">Normal apps cannot read saved Wi‑Fi passwords. Shizuku/root extraction tries local system files and Wi‑Fi diagnostics, then reports exactly what was available.</string>
     <string name="restore_review_title">Restore review</string>
     <string name="restore_review_body">WPM+ will ask Android to save supported networks in batches of five.</string>
     <string name="restore_selected_count">Selected: %1$d</string>

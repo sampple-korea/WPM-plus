@@ -21,6 +21,8 @@
     <string name="action_reveal_password">비밀번호 보기</string>
     <string name="action_hide_password">비밀번호 숨기기</string>
     <string name="action_edit_note">메모 편집</string>
+    <string name="action_more">더 보기</string>
+    <string name="action_more_network">%1$s 작업</string>
     <string name="action_refresh">새로고침</string>
     <string name="action_copy_log">로그 복사</string>
     <string name="qr_dialog_title">Wi‑Fi QR 텍스트 붙여넣기</string>
@@ -30,8 +32,11 @@
     <string name="action_restore_selected">선택 항목 복원</string>
     <string name="status_unlocked">금고 열림</string>
     <string name="empty_vault">아직 금고에 저장된 네트워크가 없습니다.</string>
+    <string name="empty_vault_body">네트워크를 직접 추가하거나, 파일을 가져오거나, Wi‑Fi QR을 붙여넣거나, 이 기기에서 추출해 시작하세요.</string>
     <string name="empty_filtered">이 조건에 맞는 네트워크가 없습니다.</string>
     <string name="empty_activity">아직 기록된 활동이 없습니다.</string>
+    <string name="privacy_summary_title">개인정보</string>
+    <string name="privacy_summary_body">WPM+는 금고와 진단 정보를 이 기기에 보관합니다. 내보내기, 공유, 복사를 직접 선택할 때만 앱 밖으로 나갑니다.</string>
     <string name="summary_total">전체: %1$d개</string>
     <string name="summary_passwords">비밀번호 있음: %1$d개</string>
     <string name="summary_restorable">복원 가능: %1$d개</string>
@@ -71,9 +76,6 @@
     <string name="note_extract_cmd_denied">플랫폼이 네트워크 목록 명령을 거부했습니다.</string>
     <string name="note_extract_shell_password_limited">Shell 모드는 production build에서 저장된 비밀번호를 보통 읽을 수 없습니다. 전체 추출은 Shizuku root/Sui를 사용하세요.</string>
     <string name="note_extract_root_no_passwords">Root 모드는 가능했지만 알려진 설정 파일에서 읽을 수 있는 비밀번호 값을 찾지 못했습니다.</string>
-    <string name="note_extract_privileged_success">Privileged Wi‑Fi Manager API가 %2$s 모드에서 %1$s개 항목을 반환했습니다.</string>
-    <string name="note_extract_privileged_passwords">읽을 수 있는 비밀번호 필드: %1$s개</string>
-    <string name="note_extract_privileged_unavailable">Privileged Wi‑Fi Manager API 사용 불가: %1$s</string>
     <string name="note_import_skip">가져오기 %1$s행 건너뜀: %2$s</string>
     <string name="note_import_json_item_not_object">JSON 항목이 객체가 아닙니다</string>
     <string name="note_import_missing_ssid_or_security">SSID가 없거나 지원되지 않는 보안 방식입니다</string>
@@ -85,6 +87,7 @@
     <string name="message_export_failed">금고 내보내기에 실패했습니다.</string>
     <string name="crash_dialog_title">이전 크래시 감지됨</string>
     <string name="crash_dialog_body">이전 실행 중 WPM+가 종료되었습니다. 디버깅을 위해 복사할 수 있도록 이 리포트는 한 번만 표시됩니다.</string>
+    <string name="crash_report_hidden_notice">민감한 값은 가려지며 원본 리포트 내용은 화면에 표시하지 않습니다.</string>
     <string name="crash_clipboard_label">WPM+ 크래시 리포트</string>
     <string name="crash_copied_message">크래시 리포트를 복사했습니다.</string>
     <string name="export_dialog_title">금고 내보내기</string>
@@ -112,7 +115,7 @@
     <string name="shizuku_root">Shizuku root 모드</string>
     <string name="shizuku_permission_required">Shizuku 권한 필요</string>
     <string name="shizuku_other">Shizuku uid %1$d</string>
-    <string name="extract_note">일반 앱은 저장된 Wi‑Fi 비밀번호를 읽을 수 없습니다. Shizuku/root 추출은 시스템 파일과 권한 진단을 시도하고, 실제로 가능한 항목만 정확히 리포트합니다.</string>
+    <string name="extract_note">일반 앱은 저장된 Wi‑Fi 비밀번호를 읽을 수 없습니다. Shizuku/root 추출은 로컬 시스템 파일과 Wi‑Fi 진단을 시도하고, 실제로 가능한 항목만 정확히 리포트합니다.</string>
     <string name="restore_review_title">복원 검토</string>
     <string name="restore_review_body">WPM+는 Android에 지원되는 네트워크를 5개 단위로 저장 요청합니다.</string>
     <string name="restore_selected_count">선택: %1$d개</string>

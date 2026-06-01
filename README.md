@@ -11,14 +11,14 @@ The project is built as a commercial-grade MVP:
 - Encrypted local Wi-Fi vault backed by Android Keystore AES-GCM
 - Import from Samsung Quick Share `WiFi_*.json.gz`, WPM+ portable exports, JSON, CSV, and Wi-Fi QR payloads
 - Password-based encrypted WPM+ export files for moving vaults between devices
-- Shizuku/Sui extraction engine that tries the privileged Wi-Fi Manager API first, then falls back to shell-readable files and diagnostics
+- Shizuku/Sui extraction engine that uses local shell-readable Wi-Fi config files and diagnostics without non-SDK Wi-Fi Manager reflection
 - Android system restore flow using `Settings.ACTION_WIFI_ADD_NETWORKS` in batches of five
 - Search, filter, edit, delete, password reveal, sensitive clipboard copy, QR/share, and notes in the vault UI
-- One-time crash report dialog on the next launch after an app crash
+- One-time redacted crash report copy flow on the next launch after an app crash
 - Restore/import/extract reports with redacted password handling
 - Material 3 Jetpack Compose UI
 - English, Korean, Japanese, and Spanish resources
-- GitHub Actions CI for unit tests and debug APK builds
+- GitHub Actions CI for unit tests, lint, debug APKs, and release app bundles
 
 ## Android Reality Check
 
@@ -27,8 +27,8 @@ Normal Android apps cannot silently read saved Wi-Fi passwords. This app therefo
 | Mode | Expected access | Password extraction |
 | --- | --- | --- |
 | Normal app | User-imported files and QR payloads | Yes, only for user-provided data |
-| Shizuku ADB shell | Privileged Wi-Fi Manager API, shell-accessible Wi-Fi diagnostics, and commands | Often SSID-only on production builds |
-| Shizuku root / Sui | Privileged Wi-Fi Manager API and root-readable Wi-Fi config store files | Best-effort PSK extraction from system APIs and known files |
+| Shizuku ADB shell | Shell-accessible Wi-Fi diagnostics, config files, and commands | Often SSID-only on production builds |
+| Shizuku root / Sui | Root-readable Wi-Fi config store files and Wi-Fi diagnostics | Best-effort PSK extraction from known local files |
 
 The restore flow uses the official Android user-confirmed API. Android accepts up to five networks per confirmation request, so the app queues batches and records the result of every batch.
 
@@ -62,17 +62,16 @@ This repository is in active MVP development. Implemented so far:
 - Multilingual resources and generated locale config
 - Encrypted vault repository
 - Import parsers and unit tests
-- Shizuku privileged Wi-Fi Manager reader and UserService command runner
+- Shizuku UserService command runner
 - System Wi-Fi extraction parser for Wi-Fi config store XML and `wpa_supplicant.conf`
 - WPM+ gzip and password-encrypted export/import codecs
-- Vault search/filter, edit/delete lifecycle, notes, reveal/copy/share controls, and crash-report copy dialog
+- Vault search/filter, edit/delete lifecycle, notes, reveal/copy/share overflow controls, and redacted crash-report copy dialog
 - Restore selection review with per-network eligibility and skip reasons
 - Batch restore session model and UI wiring
-- GitHub Actions build workflow
+- GitHub Actions build workflow with debug APK and release AAB lanes
 
 Remaining hardening work:
 
-- Structured/localized extraction and import diagnostics instead of English free-text notes
 - More Android vendor config path coverage
 - Device testing across Samsung, Pixel, Xiaomi, and Android Enterprise profiles
 - Formal vault migration policy
@@ -81,12 +80,21 @@ Remaining hardening work:
 
 ```bash
 ./gradlew testDebugUnitTest
+./gradlew lintDebug
 ./gradlew assembleDebug
+./gradlew bundleRelease
 ```
 
 The repo intentionally avoids storing real Wi-Fi passwords in fixtures, logs, or reports.
 
-GitHub Actions debug APKs are signed with a repository secret-backed CI debug key so the APK signing certificate stays stable across main-branch builds. Local builds keep using the normal Android debug keystore unless the `WPM_PLUS_DEBUG_*` signing environment variables are provided.
+GitHub Actions debug APKs are signed with a repository secret-backed CI debug key so the APK signing certificate stays stable across main-branch builds. Main-branch release bundles require `WPM_PLUS_RELEASE_*` upload-key secrets and are built through `bundleRelease` for Play App Signing. Local builds keep using the normal Android debug keystore unless signing environment variables are provided.
+
+## Store And Privacy Materials
+
+- Privacy policy draft: [docs/privacy-policy.md](docs/privacy-policy.md)
+- Google Play Data safety draft: [docs/play-data-safety.md](docs/play-data-safety.md)
+- Android App Bundle upload guidance: https://developer.android.com/studio/publish/upload-bundle
+- Play App Signing guidance: https://support.google.com/googleplay/android-developer/answer/9842756
 
 ## Security Principles
 

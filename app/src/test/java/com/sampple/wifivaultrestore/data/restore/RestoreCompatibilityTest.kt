@@ -50,6 +50,13 @@ class RestoreCompatibilityTest {
         assertTrue(credential("Office", setOf(SecurityType.WPA2), "secretpass").canRestore)
     }
 
+    @Test
+    fun openOweMixedNetworksStayEnhancedOpenForRestore() {
+        val credential = credential("Guest", setOf(SecurityType.OPEN, SecurityType.OWE), null)
+
+        assertEquals(RestoreNetworkKind.EnhancedOpen, WifiRestoreIntentFactory.restoreNetworkKind(credential))
+    }
+
     private fun credential(
         ssid: String,
         security: Set<SecurityType>,

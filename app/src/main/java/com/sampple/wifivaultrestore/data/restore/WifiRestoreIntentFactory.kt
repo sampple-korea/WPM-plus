@@ -8,6 +8,13 @@ import android.provider.Settings
 import com.sampple.wifivaultrestore.data.SecurityType
 import com.sampple.wifivaultrestore.data.WifiCredential
 
+internal enum class RestoreNetworkKind {
+    Wpa3,
+    Wpa2,
+    EnhancedOpen,
+    Open,
+}
+
 object WifiRestoreIntentFactory {
     fun buildIntent(credentials: List<WifiCredential>): Intent {
         val suggestions = credentials.mapNotNull { credential ->
@@ -35,25 +42,40 @@ object WifiRestoreIntentFactory {
             .setIsInitialAutojoinEnabled(autoJoin)
 
         return try {
-            val passwordValue = password
-            when {
-                security.contains(SecurityType.WPA3) && !security.contains(SecurityType.WPA2) && !passwordValue.isNullOrBlank() -> {
-                    builder.setWpa3Passphrase(passwordValue)
+            when (restoreNetworkKind(credential = this)) {
+                RestoreNetworkKind.Wpa3 -> {
+                    builder.setWpa3Passphrase(password.orEmpty())
                     builder.setCredentialSharedWithUser(true)
                 }
-                security.any { it == SecurityType.WPA2 || it == SecurityType.WPA3 } && !passwordValue.isNullOrBlank() -> {
-                    builder.setWpa2Passphrase(passwordValue)
+                RestoreNetworkKind.Wpa2 -> {
+                    builder.setWpa2Passphrase(password.orEmpty())
                     builder.setCredentialSharedWithUser(true)
                 }
-                security.contains(SecurityType.OWE) && !security.contains(SecurityType.OPEN) -> {
+                RestoreNetworkKind.EnhancedOpen -> {
                     builder.setIsEnhancedOpen(true)
                 }
-                security.contains(SecurityType.OPEN) || passwordValue.isNullOrBlank() -> Unit
-                else -> return null
+                RestoreNetworkKind.Open -> Unit
+                null -> return null
             }
             builder.build()
         } catch (_: RuntimeException) {
             null
+        }
+    }
+
+    internal fun restoreNetworkKind(credential: WifiCredential): RestoreNetworkKind? {
+        if (!RestoreCompatibility.evaluate(credential).supported) return null
+        val security = credential.security
+        val passwordValue = credential.password
+        return when {
+            security.contains(SecurityType.WPA3) &&
+                !security.contains(SecurityType.WPA2) &&
+                !passwordValue.isNullOrBlank() -> RestoreNetworkKind.Wpa3
+            security.any { it == SecurityType.WPA2 || it == SecurityType.WPA3 } &&
+                !passwordValue.isNullOrBlank() -> RestoreNetworkKind.Wpa2
+            security.contains(SecurityType.OWE) -> RestoreNetworkKind.EnhancedOpen
+            security.contains(SecurityType.OPEN) || passwordValue.isNullOrBlank() -> RestoreNetworkKind.Open
+            else -> null
         }
     }
 }

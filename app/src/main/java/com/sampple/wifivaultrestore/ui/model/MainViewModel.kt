@@ -11,7 +11,6 @@ import com.sampple.wifivaultrestore.data.SecurityType
 import com.sampple.wifivaultrestore.data.WifiCredential
 import com.sampple.wifivaultrestore.diagnostics.CrashReporter
 import com.sampple.wifivaultrestore.data.extract.SystemWifiExtractor
-import com.sampple.wifivaultrestore.data.extract.ShizukuWifiManagerReader
 import com.sampple.wifivaultrestore.data.importer.ImportPasswordRequiredException
 import com.sampple.wifivaultrestore.data.importer.VaultExportCodec
 import com.sampple.wifivaultrestore.data.importer.WifiImportParser
@@ -31,7 +30,7 @@ import java.util.UUID
 class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val repository = WifiVaultRepository(application)
     private val shizuku = ShizukuCommandRunner(application)
-    private val extractor = SystemWifiExtractor(shizuku, ShizukuWifiManagerReader(application))
+    private val extractor = SystemWifiExtractor(shizuku)
 
     private val _state = MutableStateFlow(AppState())
     val state: StateFlow<AppState> = _state.asStateFlow()
@@ -146,7 +145,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun saveManualCredential(
         ssid: String,
-        security: SecurityType,
+        security: Set<SecurityType>,
         password: String?,
         hidden: Boolean,
         note: String?,
@@ -156,7 +155,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             runCatching {
                 val credential = WifiCredential.create(
                     ssid = ssid.trim(),
-                    security = setOf(security),
+                    security = security,
                     password = password?.takeIf { it.isNotBlank() },
                     hidden = hidden,
                     note = note,
@@ -174,7 +173,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun updateCredential(
         originalId: String,
         ssid: String,
-        security: SecurityType,
+        security: Set<SecurityType>,
         password: String?,
         hidden: Boolean,
         note: String?,
@@ -185,7 +184,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 val original = state.value.vault.credentials.firstOrNull { it.id == originalId }
                 val credential = WifiCredential.create(
                     ssid = ssid.trim(),
-                    security = setOf(security),
+                    security = security,
                     password = password?.takeIf { it.isNotBlank() },
                     hidden = hidden,
                     note = note,

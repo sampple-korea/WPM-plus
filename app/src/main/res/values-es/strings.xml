@@ -21,6 +21,8 @@
     <string name="action_reveal_password">Mostrar contraseña</string>
     <string name="action_hide_password">Ocultar contraseña</string>
     <string name="action_edit_note">Editar nota</string>
+    <string name="action_more">Más acciones</string>
+    <string name="action_more_network">Acciones para %1$s</string>
     <string name="action_refresh">Actualizar</string>
     <string name="action_copy_log">Copiar registro</string>
     <string name="qr_dialog_title">Pegar texto QR de Wi‑Fi</string>
@@ -30,8 +32,11 @@
     <string name="action_restore_selected">Restaurar selección</string>
     <string name="status_unlocked">Bóveda desbloqueada</string>
     <string name="empty_vault">Todavía no hay redes guardadas en la bóveda.</string>
+    <string name="empty_vault_body">Empieza añadiendo una red, importando un archivo, pegando un QR de Wi‑Fi o extrayendo desde este dispositivo.</string>
     <string name="empty_filtered">No hay redes que coincidan con esta vista.</string>
     <string name="empty_activity">Todavía no hay actividad registrada.</string>
+    <string name="privacy_summary_title">Privacidad</string>
+    <string name="privacy_summary_body">WPM+ mantiene la bóveda y los diagnósticos en este dispositivo. Los datos salen de la app solo cuando exportas, compartes o copias.</string>
     <string name="summary_total">Total: %1$d</string>
     <string name="summary_passwords">Con contraseña: %1$d</string>
     <string name="summary_restorable">Restaurables: %1$d</string>
@@ -71,9 +76,6 @@
     <string name="note_extract_cmd_denied">La plataforma denegó el comando de lista de redes.</string>
     <string name="note_extract_shell_password_limited">El modo shell normalmente no puede leer contraseñas guardadas en builds de producción. Usa Shizuku root/Sui para una extracción completa.</string>
     <string name="note_extract_root_no_passwords">El modo root estaba disponible, pero no se encontraron valores de contraseña legibles en archivos conocidos.</string>
-    <string name="note_extract_privileged_success">La API privilegiada de Wi‑Fi Manager devolvió %1$s entradas en modo %2$s.</string>
-    <string name="note_extract_privileged_passwords">Campos de contraseña legibles: %1$s</string>
-    <string name="note_extract_privileged_unavailable">La API privilegiada de Wi‑Fi Manager no estaba disponible: %1$s</string>
     <string name="note_import_skip">Fila de importación %1$s omitida: %2$s</string>
     <string name="note_import_json_item_not_object">El elemento JSON no es un objeto</string>
     <string name="note_import_missing_ssid_or_security">Falta el SSID o la seguridad no es compatible</string>
@@ -85,6 +87,7 @@
     <string name="message_export_failed">Error al exportar la bóveda.</string>
     <string name="crash_dialog_title">Se detectó un cierre anterior</string>
     <string name="crash_dialog_body">WPM+ se cerró durante la ejecución anterior. Este informe se muestra solo una vez para que puedas copiarlo y depurarlo.</string>
+    <string name="crash_report_hidden_notice">Los valores sensibles se redactan y el informe completo no se muestra en pantalla.</string>
     <string name="crash_clipboard_label">Informe de cierre de WPM+</string>
     <string name="crash_copied_message">Informe de cierre copiado.</string>
     <string name="export_dialog_title">Exportar bóveda</string>
@@ -112,7 +115,7 @@
     <string name="shizuku_root">Modo root de Shizuku</string>
     <string name="shizuku_permission_required">Se requiere permiso de Shizuku</string>
     <string name="shizuku_other">Shizuku uid %1$d</string>
-    <string name="extract_note">Las apps normales no pueden leer contraseñas Wi‑Fi guardadas. La extracción Shizuku/root prueba archivos del sistema y diagnósticos privilegiados, y reporta exactamente lo disponible.</string>
+    <string name="extract_note">Las apps normales no pueden leer contraseñas Wi‑Fi guardadas. La extracción Shizuku/root prueba archivos locales del sistema y diagnósticos Wi‑Fi, y reporta exactamente lo disponible.</string>
     <string name="restore_review_title">Revisión de restauración</string>
     <string name="restore_review_body">WPM+ pedirá a Android que guarde las redes compatibles en lotes de cinco.</string>
     <string name="restore_selected_count">Seleccionadas: %1$d</string>

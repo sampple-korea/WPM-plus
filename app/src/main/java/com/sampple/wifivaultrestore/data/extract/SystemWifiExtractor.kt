@@ -9,7 +9,6 @@ import com.sampple.wifivaultrestore.shizuku.ShizukuCommandRunner
 
 class SystemWifiExtractor(
     private val commandRunner: ShizukuCommandRunner,
-    private val privilegedReader: ShizukuWifiManagerReader? = null,
 ) {
     suspend fun extract(): ExtractionOutcome {
         val state = commandRunner.state()
@@ -32,13 +31,6 @@ class SystemWifiExtractor(
         val notes = mutableListOf<String>()
         val credentials = linkedMapOf<String, WifiCredential>()
         var sourcesChecked = 0
-
-        val privilegedRead = privilegedReader?.read(mode, source)
-        if (privilegedRead != null) {
-            sourcesChecked++
-            notes += privilegedRead.notes
-            privilegedRead.credentials.forEach { credentials.mergeCredential(it) }
-        }
 
         val fileResult = commandRunner.dumpWifiConfigFiles()
         if (fileResult.exitCode != 0 || fileResult.error.isNotBlank()) {

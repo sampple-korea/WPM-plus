@@ -38,7 +38,6 @@ object RestoreCompatibility {
             credential.ssid.isBlank() -> credential.skipped(RestoreSkipReason.BlankSsid)
             security.contains(SecurityType.EAP) -> credential.skipped(RestoreSkipReason.UnsupportedEnterprise)
             security.contains(SecurityType.WEP) -> credential.skipped(RestoreSkipReason.UnsupportedWep)
-            security.contains(SecurityType.OPEN) || security.contains(SecurityType.OWE) -> credential.supported()
             security.any { it == SecurityType.WPA2 || it == SecurityType.WPA3 } -> {
                 when {
                     password.isBlank() -> credential.skipped(RestoreSkipReason.MissingPassword)
@@ -46,6 +45,8 @@ object RestoreCompatibility {
                     else -> credential.supported()
                 }
             }
+            security.contains(SecurityType.OWE) -> credential.supported()
+            security.contains(SecurityType.OPEN) -> credential.supported()
             credential.hasPassword -> credential.skipped(RestoreSkipReason.UnsupportedSecurity)
             else -> credential.skipped(RestoreSkipReason.MissingPassword)
         }

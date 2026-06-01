@@ -47,7 +47,7 @@ object CrashReporter {
             appendLine("Device: ${Build.MANUFACTURER} ${Build.MODEL}")
             appendLine("Process: ${context.packageName}")
             appendLine()
-            appendLine(trace.redactSecrets())
+            appendLine(redactSecretsForReport(trace))
         }
         crashFile(context).writeText(report.take(MAX_REPORT_CHARS), Charsets.UTF_8)
     }
@@ -58,12 +58,15 @@ object CrashReporter {
 
     private const val MAX_REPORT_CHARS = 64_000
 
-    private fun String.redactSecrets(): String {
-        return REDACTION_PATTERNS.fold(this) { current, pattern ->
+    internal fun redactSecretsForReport(text: String): String {
+        val redactedKeyValues = REDACTION_PATTERNS.fold(text) { current, pattern ->
             pattern.replace(current) { match ->
                 val key = match.groups[1]?.value ?: return@replace "[redacted]"
                 "$key=[redacted]"
             }
+        }
+        return WIFI_QR_PASSWORD_PATTERN.replace(redactedKeyValues) { match ->
+            "${match.groups[1]?.value.orEmpty()}[redacted]"
         }
     }
 
@@ -71,4 +74,6 @@ object CrashReporter {
         Regex("(?i)\\b(password|passphrase|psk|preSharedKey)\\s*[:=]\\s*([^\\s,;)}]+)"),
         Regex("(?i)\\\"(password|passphrase|psk|preSharedKey)\\\"\\s*:\\s*\\\"([^\\\"]*)\\\""),
     )
+
+    private val WIFI_QR_PASSWORD_PATTERN = Regex("(?i)(WIFI:[^\\n\\r]*?;P:)([^;\\n\\r]*)")
 }
