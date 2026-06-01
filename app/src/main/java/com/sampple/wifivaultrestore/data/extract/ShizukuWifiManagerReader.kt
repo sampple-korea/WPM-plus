@@ -5,6 +5,7 @@ import android.content.Context
 import android.os.Build
 import android.os.Bundle
 import android.os.IBinder
+import androidx.annotation.RequiresApi
 import com.sampple.wifivaultrestore.data.CredentialSource
 import com.sampple.wifivaultrestore.data.SecurityType
 import com.sampple.wifivaultrestore.data.WifiCredential
@@ -214,6 +215,7 @@ class ShizukuWifiManagerReader(private val context: Context) {
         }.getOrDefault(fallback)
     }
 
+    @RequiresApi(Build.VERSION_CODES.S)
     private fun attributionBundle(shizukuUid: Int): Bundle {
         val source = AttributionSource.Builder(shizukuUid)
             .setPackageName(SHELL_PACKAGE)

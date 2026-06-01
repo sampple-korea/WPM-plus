@@ -124,6 +124,12 @@ fun WifiVaultApp(viewModel: MainViewModel = viewModel()) {
     val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+    val importFailedMessage = stringResource(R.string.message_import_failed)
+    val exportFailedMessage = stringResource(R.string.message_export_failed)
+    val exportCompleteMessage = stringResource(R.string.message_export_complete)
+    val passwordCopiedMessage = stringResource(R.string.message_password_copied)
+    val crashClipboardLabel = stringResource(R.string.crash_clipboard_label)
+    val crashCopiedMessage = stringResource(R.string.crash_copied_message)
     var selectedIndex by rememberSaveable { mutableIntStateOf(0) }
     var qrDialogOpen by rememberSaveable { mutableStateOf(false) }
     var qrText by rememberSaveable { mutableStateOf("") }
@@ -141,7 +147,7 @@ fun WifiVaultApp(viewModel: MainViewModel = viewModel()) {
                 if (bytes != null) viewModel.importBytes(uri.lastPathSegment, bytes)
             }.onFailure { error ->
                 scope.launch {
-                    snackbarHostState.showSnackbar(error.message ?: context.getString(R.string.message_import_failed))
+                    snackbarHostState.showSnackbar(error.message ?: importFailedMessage)
                 }
             }
         }
@@ -154,12 +160,12 @@ fun WifiVaultApp(viewModel: MainViewModel = viewModel()) {
         if (uri != null && export != null) {
             runCatching {
                 context.contentResolver.openOutputStream(uri)?.use { it.write(export.bytes) }
-                    ?: error(context.getString(R.string.message_export_failed))
+                    ?: error(exportFailedMessage)
             }.onSuccess {
                 scope.launch { snackbarHostState.showSnackbar(export.message) }
             }.onFailure { error ->
                 scope.launch {
-                    snackbarHostState.showSnackbar(error.message ?: context.getString(R.string.message_export_failed))
+                    snackbarHostState.showSnackbar(error.message ?: exportFailedMessage)
                 }
             }
         }
@@ -214,7 +220,7 @@ fun WifiVaultApp(viewModel: MainViewModel = viewModel()) {
                 padding = padding,
                 onExport = { exportDialogOpen = true },
                 onPasswordCopied = {
-                    scope.launch { snackbarHostState.showSnackbar(context.getString(R.string.message_password_copied)) }
+                    scope.launch { snackbarHostState.showSnackbar(passwordCopiedMessage) }
                 },
                 onShare = context::shareCredential,
                 onUpdateNote = viewModel::updateNote,
@@ -288,12 +294,12 @@ fun WifiVaultApp(viewModel: MainViewModel = viewModel()) {
                 runCatching {
                     val bytes = viewModel.exportVault(encrypted, password)
                     val fileName = if (encrypted) "wpm-plus-vault-encrypted.wpmv.json" else "wpm-plus-vault.wpmv.json.gz"
-                    pendingExport = PendingExport(bytes, context.getString(R.string.message_export_complete))
+                    pendingExport = PendingExport(bytes, exportCompleteMessage)
                     exportLauncher.launch(fileName)
                     exportDialogOpen = false
                 }.onFailure { error ->
                     scope.launch {
-                        snackbarHostState.showSnackbar(error.message ?: context.getString(R.string.message_export_failed))
+                        snackbarHostState.showSnackbar(error.message ?: exportFailedMessage)
                     }
                 }
             },
@@ -362,12 +368,12 @@ fun WifiVaultApp(viewModel: MainViewModel = viewModel()) {
                 Button(
                     onClick = {
                         context.copySensitiveText(
-                            label = context.getString(R.string.crash_clipboard_label),
+                            label = crashClipboardLabel,
                             value = report,
                         )
                         viewModel.clearPendingCrashReport()
                         scope.launch {
-                            snackbarHostState.showSnackbar(context.getString(R.string.crash_copied_message))
+                            snackbarHostState.showSnackbar(crashCopiedMessage)
                         }
                     },
                 ) {
