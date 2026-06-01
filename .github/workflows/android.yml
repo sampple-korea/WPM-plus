@@ -13,7 +13,6 @@ jobs:
       WPM_PLUS_DEBUG_KEY_ALIAS: wpm-plus-ci-debug
       WPM_PLUS_DEBUG_KEY_PASSWORD: ${{ secrets.WPM_PLUS_DEBUG_KEY_PASSWORD }}
       WPM_PLUS_DEBUG_KEYSTORE_BASE64: ${{ secrets.WPM_PLUS_DEBUG_KEYSTORE_BASE64 }}
-      WPM_PLUS_DEBUG_STORE_FILE: ${{ runner.temp }}/wpm-plus-signing/wpm-plus-ci-debug.jks
       WPM_PLUS_DEBUG_STORE_PASSWORD: ${{ secrets.WPM_PLUS_DEBUG_STORE_PASSWORD }}
     steps:
       - name: Checkout
@@ -37,9 +36,11 @@ jobs:
       - name: Restore stable debug signing key
         if: env.WPM_PLUS_DEBUG_KEYSTORE_BASE64 != ''
         run: |
+          WPM_PLUS_DEBUG_STORE_FILE="$GITHUB_WORKSPACE/.ci-signing/wpm-plus-ci-debug.jks"
           mkdir -p "$(dirname "$WPM_PLUS_DEBUG_STORE_FILE")"
           printf '%s' "$WPM_PLUS_DEBUG_KEYSTORE_BASE64" | base64 --decode > "$WPM_PLUS_DEBUG_STORE_FILE"
           chmod 600 "$WPM_PLUS_DEBUG_STORE_FILE"
+          echo "WPM_PLUS_DEBUG_STORE_FILE=$WPM_PLUS_DEBUG_STORE_FILE" >> "$GITHUB_ENV"
 
       - name: Unit tests
         run: ./gradlew testDebugUnitTest
