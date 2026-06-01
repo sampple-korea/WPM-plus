@@ -3,6 +3,18 @@ plugins {
     alias(libs.plugins.kotlin.compose)
 }
 
+val ciDebugStoreFile = providers.environmentVariable("WPM_PLUS_DEBUG_STORE_FILE")
+val ciDebugStorePassword = providers.environmentVariable("WPM_PLUS_DEBUG_STORE_PASSWORD")
+val ciDebugKeyAlias = providers.environmentVariable("WPM_PLUS_DEBUG_KEY_ALIAS")
+    .orElse("wpm-plus-ci-debug")
+val ciDebugKeyPassword = providers.environmentVariable("WPM_PLUS_DEBUG_KEY_PASSWORD")
+val useCiDebugSigning = listOf(
+    ciDebugStoreFile.orNull,
+    ciDebugStorePassword.orNull,
+    ciDebugKeyAlias.orNull,
+    ciDebugKeyPassword.orNull,
+).all { !it.isNullOrBlank() } && ciDebugStoreFile.orNull?.let { rootProject.file(it).isFile } == true
+
 android {
     namespace = "com.sampple.wifivaultrestore"
     compileSdk = 36
@@ -19,6 +31,25 @@ android {
 
     androidResources {
         generateLocaleConfig = true
+    }
+
+    signingConfigs {
+        if (useCiDebugSigning) {
+            create("ciDebug") {
+                storeFile = rootProject.file(ciDebugStoreFile.get())
+                storePassword = ciDebugStorePassword.get()
+                keyAlias = ciDebugKeyAlias.get()
+                keyPassword = ciDebugKeyPassword.get()
+            }
+        }
+    }
+
+    buildTypes {
+        debug {
+            if (useCiDebugSigning) {
+                signingConfig = signingConfigs.getByName("ciDebug")
+            }
+        }
     }
 
     buildFeatures {

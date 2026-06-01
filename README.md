@@ -80,6 +80,8 @@ Remaining hardening work:
 
 The repo intentionally avoids storing real Wi-Fi passwords in fixtures, logs, or reports.
 
+GitHub Actions debug APKs are signed with a repository secret-backed CI debug key so the APK signing certificate stays stable across main-branch builds. Local builds keep using the normal Android debug keystore unless the `WPM_PLUS_DEBUG_*` signing environment variables are provided.
+
 ## Security Principles
 
 - No password values in logs, reports, crash messages, or UI summaries
