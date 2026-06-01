@@ -42,6 +42,17 @@ class WifiImportParserTest {
     }
 
     @Test
+    fun parsesPlainCsvLargerThanEncryptedImportLimit() {
+        val note = "a".repeat(8 * 1024 * 1024 + 64)
+        val csv = "ssid,security,password,note\nLarge,WPA2,secretpass,$note"
+
+        val result = WifiImportParser.parse("large.csv", csv.toByteArray(Charsets.UTF_8))
+
+        assertEquals(1, result.importedCount)
+        assertEquals("Large", result.credentials.single().ssid)
+    }
+
+    @Test
     fun parsesEscapedWifiQr() {
         val qr = """WIFI:T:WPA;S:Cafe\;Main;P:pa\:ss;H:true;;"""
 

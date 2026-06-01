@@ -31,8 +31,13 @@ class WifiVaultRepository(context: Context) {
             val plain = crypto.decrypt(blob)
             VaultData.fromJson(JSONObject(String(plain, Charsets.UTF_8)))
         }.getOrElse { error ->
-            if (error is VaultLockedException) archiveLockedVaultCopy()
-            throw error
+            if (error is VaultLockedException) {
+                runCatching { archiveLockedVault(vaultFile, appContext.filesDir) }
+                    .getOrElse { throw error }
+                VaultData()
+            } else {
+                throw error
+            }
         }
     }
 
@@ -110,14 +115,6 @@ class WifiVaultRepository(context: Context) {
         return updated
     }
 
-    private fun archiveLockedVaultCopy() {
-        val backup = File(
-            appContext.filesDir,
-            "wifi-vault.locked.${System.currentTimeMillis()}.enc.json",
-        )
-        runCatching { vaultFile.copyTo(backup, overwrite = false) }
-    }
-
     private fun writeAtomically(bytes: ByteArray) {
         val temp = File(appContext.filesDir, "${vaultFile.name}.tmp")
         FileOutputStream(temp).use { output ->
@@ -134,6 +131,41 @@ class WifiVaultRepository(context: Context) {
         }.getOrElse { error ->
             if (error !is AtomicMoveNotSupportedException) throw error
             Files.move(temp.toPath(), vaultFile.toPath(), StandardCopyOption.REPLACE_EXISTING)
+        }
+    }
+
+    companion object {
+        internal fun archiveLockedVault(
+            vaultFile: File,
+            filesDir: File,
+            timestampMillis: Long = System.currentTimeMillis(),
+        ): File? {
+            if (!vaultFile.exists()) return null
+
+            val backup = lockedVaultBackupFile(filesDir, timestampMillis)
+            return runCatching {
+                Files.move(vaultFile.toPath(), backup.toPath(), StandardCopyOption.ATOMIC_MOVE)
+                backup
+            }.recoverCatching { error ->
+                if (error !is AtomicMoveNotSupportedException) throw error
+                Files.move(vaultFile.toPath(), backup.toPath())
+                backup
+            }.getOrElse {
+                vaultFile.copyTo(backup, overwrite = false)
+                if (!vaultFile.delete()) Files.delete(vaultFile.toPath())
+                backup
+            }
+        }
+
+        private fun lockedVaultBackupFile(filesDir: File, timestampMillis: Long): File {
+            val baseName = "wifi-vault.locked.$timestampMillis.enc.json"
+            var backup = File(filesDir, baseName)
+            var suffix = 1
+            while (backup.exists()) {
+                backup = File(filesDir, "wifi-vault.locked.$timestampMillis.$suffix.enc.json")
+                suffix += 1
+            }
+            return backup
         }
     }
 }

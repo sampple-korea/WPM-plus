@@ -1,11 +1,19 @@
 package com.sampple.wifivaultrestore.data.importer
 
 import org.json.JSONObject
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertThrows
 import org.junit.Test
 import java.util.Base64
 
 class VaultExportCodecTest {
+    @Test
+    fun ignoresLargePlaintextBeforeEncryptedSizeLimit() {
+        val plaintext = ByteArray(9 * 1024 * 1024) { 'a'.code.toByte() }
+
+        assertNull(VaultExportCodec.decodeEncryptedIfPresent(plaintext, null))
+    }
+
     @Test
     fun rejectsEncryptedExportsWithUnsupportedIterations() {
         val envelope = JSONObject()

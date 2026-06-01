@@ -65,12 +65,12 @@ object VaultExportCodec {
     }
 
     fun decodeEncryptedIfPresent(bytes: ByteArray, password: String?): VaultData? {
-        require(bytes.size <= MAX_ENCRYPTED_BYTES) { "Encrypted vault export is too large." }
         val text = bytes.toString(Charsets.UTF_8).trimStart()
         if (!text.startsWith("{")) return null
         val envelope = runCatching { JSONObject(text) }.getOrNull() ?: return null
         val format = envelope.optString("format")
         if (format != ENCRYPTED_FORMAT && format != LEGACY_ENCRYPTED_FORMAT) return null
+        require(bytes.size <= MAX_ENCRYPTED_BYTES) { "Encrypted vault export is too large." }
         if (password.isNullOrBlank()) throw ImportPasswordRequiredException()
 
         val iterations = envelope.optInt("iterations", ITERATIONS)
