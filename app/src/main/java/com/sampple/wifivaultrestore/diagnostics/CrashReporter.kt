@@ -59,27 +59,40 @@ object CrashReporter {
     private const val MAX_REPORT_CHARS = 64_000
 
     internal fun redactSecretsForReport(text: String): String {
-        val redactedKeyValues = REDACTION_PATTERNS.fold(text) { current, pattern ->
-            pattern.replace(current) { match ->
-                val key = match.groups[1]?.value ?: return@replace "[redacted]"
-                "$key=[redacted]"
-            }
-        }
+        val redactedKeyValues = text.lineSequence()
+            .joinToString("\n", transform = ::redactSecretKeyValueLine)
         return redactWifiQrPasswords(redactedKeyValues)
     }
 
-    private val REDACTION_PATTERNS = listOf(
-        Regex("(?i)\\b(password|passphrase|psk|preSharedKey)\\s*[:=]\\s*([^\\s,;)}]+)"),
-        Regex("(?i)\\\"(password|passphrase|psk|preSharedKey)\\\"\\s*:\\s*\\\"([^\\\"]*)\\\""),
-    )
+    private fun redactSecretKeyValueLine(line: String): String {
+        val jsonRedacted = JSON_SECRET_PATTERN.replace(line) { match ->
+            val key = match.groups[1]?.value.orEmpty()
+            "\"$key\":\"[redacted]\""
+        }
+
+        val keyValue = KEY_VALUE_SECRET_PATTERN.find(jsonRedacted) ?: return jsonRedacted
+        val key = keyValue.groups[1]?.value.orEmpty()
+        val separator = keyValue.groups[2]?.value.orEmpty()
+        return jsonRedacted.substring(0, keyValue.range.first) +
+            "$key$separator[redacted]"
+    }
+
+    private val KEY_VALUE_SECRET_PATTERN = Regex("(?i)\\b(password|passphrase|psk|preSharedKey)(\\s*[:=]\\s*).*$")
+    private val JSON_SECRET_PATTERN = Regex("(?i)\"(password|passphrase|psk|preSharedKey)\"\\s*:\\s*\"[^\"]*\"")
 
     private fun redactWifiQrPasswords(text: String): String {
         return text.lineSequence().joinToString("\n") { line ->
             val wifiStart = line.indexOf("WIFI:", ignoreCase = true)
-            val passwordMarker = line.indexOf(";P:", startIndex = wifiStart.coerceAtLeast(0), ignoreCase = true)
-            if (wifiStart < 0 || passwordMarker < 0) return@joinToString line
+            if (wifiStart < 0) return@joinToString line
 
-            val valueStart = passwordMarker + 3
+            val directPasswordMarker = line.indexOf("WIFI:P:", startIndex = wifiStart, ignoreCase = true)
+            val fieldPasswordMarker = line.indexOf(";P:", startIndex = wifiStart, ignoreCase = true)
+            val valueStart = when {
+                directPasswordMarker >= 0 -> directPasswordMarker + "WIFI:P:".length
+                fieldPasswordMarker >= 0 -> fieldPasswordMarker + 3
+                else -> return@joinToString line
+            }
+
             val valueEnd = findWifiQrFieldEnd(line, valueStart)
             line.replaceRange(valueStart, valueEnd, "[redacted]")
         }

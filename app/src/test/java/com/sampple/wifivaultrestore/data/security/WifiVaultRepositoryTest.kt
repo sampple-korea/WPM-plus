@@ -1,5 +1,6 @@
 package com.sampple.wifivaultrestore.data.security
 
+import com.sampple.wifivaultrestore.data.SecurityType
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -29,5 +30,16 @@ class WifiVaultRepositoryTest {
         } finally {
             filesDir.deleteRecursively()
         }
+    }
+
+    @Test
+    fun passwordCarryingSecurityPolicyOnlyKeepsSecretsForPasswordNetworks() {
+        assertTrue(setOf(SecurityType.WPA2).canCarryVaultPassword())
+        assertTrue(setOf(SecurityType.WPA3).canCarryVaultPassword())
+        assertTrue(setOf(SecurityType.EAP).canCarryVaultPassword())
+        assertTrue(setOf(SecurityType.WEP).canCarryVaultPassword())
+        assertFalse(setOf(SecurityType.OPEN).canCarryVaultPassword())
+        assertFalse(setOf(SecurityType.OWE).canCarryVaultPassword())
+        assertFalse(setOf(SecurityType.OPEN, SecurityType.OWE).canCarryVaultPassword())
     }
 }

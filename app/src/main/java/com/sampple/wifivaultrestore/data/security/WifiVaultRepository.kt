@@ -2,6 +2,7 @@ package com.sampple.wifivaultrestore.data.security
 
 import android.content.Context
 import android.util.Base64
+import com.sampple.wifivaultrestore.data.SecurityType
 import com.sampple.wifivaultrestore.data.VaultData
 import com.sampple.wifivaultrestore.data.WifiCredential
 import com.sampple.wifivaultrestore.data.report.OperationReport
@@ -71,7 +72,7 @@ class WifiVaultRepository(context: Context) {
                 credential
             } else {
                 credential.copy(
-                    password = credential.password ?: existing.password,
+                    password = credential.password ?: existing.password.takeIf { credential.security.canCarryVaultPassword() },
                     note = credential.note ?: existing.note,
                     createdAtMillis = existing.createdAtMillis,
                     updatedAtMillis = System.currentTimeMillis(),
@@ -179,4 +180,8 @@ class WifiVaultRepository(context: Context) {
             return backup
         }
     }
+}
+
+internal fun Set<SecurityType>.canCarryVaultPassword(): Boolean {
+    return any { it == SecurityType.WPA2 || it == SecurityType.WPA3 || it == SecurityType.WEP || it == SecurityType.EAP }
 }
