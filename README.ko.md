@@ -93,4 +93,6 @@ GitHub Actions debug APK는 저장소 secret에 보관된 CI debug 키로 서명
 
 ## 라이선스
 
-아직 라이선스를 선택하지 않았습니다.
+WPM+는 Apache License, Version 2.0으로 배포됩니다.
+
+재배포 시 `NOTICE`의 attribution 고지를 유지해야 합니다.

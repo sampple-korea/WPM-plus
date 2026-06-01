@@ -92,4 +92,6 @@ GitHub Actions debug APKs are signed with a repository secret-backed CI debug ke
 
 ## License
 
-License is not selected yet.
+WPM+ is licensed under the Apache License, Version 2.0.
+
+Redistributions must preserve the attribution notices in `NOTICE`.
