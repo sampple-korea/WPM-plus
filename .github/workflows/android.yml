@@ -98,6 +98,7 @@ jobs:
           path: app/build/outputs/apk/debug/app-debug.apk
 
       - name: Upload release AAB
+        if: env.WPM_PLUS_RELEASE_KEYSTORE_BASE64 != ''
         uses: actions/upload-artifact@v5
         with:
           name: wpm-plus-release-aab
