@@ -9,6 +9,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import java.io.File
+import java.io.FileOutputStream
+import java.nio.file.AtomicMoveNotSupportedException
+import java.nio.file.Files
+import java.nio.file.StandardCopyOption
 
 class WifiVaultRepository(context: Context) {
     private val appContext = context.applicationContext
@@ -27,12 +31,8 @@ class WifiVaultRepository(context: Context) {
             val plain = crypto.decrypt(blob)
             VaultData.fromJson(JSONObject(String(plain, Charsets.UTF_8)))
         }.getOrElse { error ->
-            if (error is VaultLockedException) {
-                archiveLockedVault()
-                VaultData()
-            } else {
-                throw error
-            }
+            if (error is VaultLockedException) archiveLockedVaultCopy()
+            throw error
         }
     }
 
@@ -43,7 +43,7 @@ class WifiVaultRepository(context: Context) {
             .put("keyAlias", blob.keyAlias)
             .put("iv", Base64.encodeToString(blob.iv, Base64.NO_WRAP))
             .put("cipherText", Base64.encodeToString(blob.cipherText, Base64.NO_WRAP))
-        vaultFile.writeText(envelope.toString(), Charsets.UTF_8)
+        writeAtomically(envelope.toString().toByteArray(Charsets.UTF_8))
     }
 
     suspend fun upsertCredentials(newCredentials: List<WifiCredential>): VaultData {
@@ -92,12 +92,30 @@ class WifiVaultRepository(context: Context) {
         return updated
     }
 
-    private fun archiveLockedVault() {
+    private fun archiveLockedVaultCopy() {
         val backup = File(
             appContext.filesDir,
             "wifi-vault.locked.${System.currentTimeMillis()}.enc.json",
         )
         runCatching { vaultFile.copyTo(backup, overwrite = false) }
-        runCatching { vaultFile.delete() }
+    }
+
+    private fun writeAtomically(bytes: ByteArray) {
+        val temp = File(appContext.filesDir, "${vaultFile.name}.tmp")
+        FileOutputStream(temp).use { output ->
+            output.write(bytes)
+            output.fd.sync()
+        }
+        runCatching {
+            Files.move(
+                temp.toPath(),
+                vaultFile.toPath(),
+                StandardCopyOption.REPLACE_EXISTING,
+                StandardCopyOption.ATOMIC_MOVE,
+            )
+        }.getOrElse { error ->
+            if (error !is AtomicMoveNotSupportedException) throw error
+            Files.move(temp.toPath(), vaultFile.toPath(), StandardCopyOption.REPLACE_EXISTING)
+        }
     }
 }

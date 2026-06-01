@@ -6,6 +6,7 @@ import com.sampple.wifivaultrestore.data.WifiCredential
 import com.sampple.wifivaultrestore.data.parseSecuritySet
 import org.w3c.dom.Element
 import java.io.ByteArrayInputStream
+import javax.xml.XMLConstants
 import javax.xml.parsers.DocumentBuilderFactory
 
 object WifiConfigStoreParser {
@@ -14,6 +15,11 @@ object WifiConfigStoreParser {
             isNamespaceAware = false
             isIgnoringComments = true
             isCoalescing = true
+            runCatching { setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true) }
+            runCatching { setFeature("http://apache.org/xml/features/disallow-doctype-decl", true) }
+            runCatching { setFeature("http://xml.org/sax/features/external-general-entities", false) }
+            runCatching { setFeature("http://xml.org/sax/features/external-parameter-entities", false) }
+            isExpandEntityReferences = false
         }
         val document = factory.newDocumentBuilder()
             .parse(ByteArrayInputStream(xml.toByteArray(Charsets.UTF_8)))

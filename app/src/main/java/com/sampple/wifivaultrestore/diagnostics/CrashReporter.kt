@@ -47,7 +47,7 @@ object CrashReporter {
             appendLine("Device: ${Build.MANUFACTURER} ${Build.MODEL}")
             appendLine("Process: ${context.packageName}")
             appendLine()
-            appendLine(trace)
+            appendLine(trace.redactSecrets())
         }
         crashFile(context).writeText(report.take(MAX_REPORT_CHARS), Charsets.UTF_8)
     }
@@ -57,4 +57,18 @@ object CrashReporter {
     }
 
     private const val MAX_REPORT_CHARS = 64_000
+
+    private fun String.redactSecrets(): String {
+        return REDACTION_PATTERNS.fold(this) { current, pattern ->
+            pattern.replace(current) { match ->
+                val key = match.groups[1]?.value ?: return@replace "[redacted]"
+                "$key=[redacted]"
+            }
+        }
+    }
+
+    private val REDACTION_PATTERNS = listOf(
+        Regex("(?i)\\b(password|passphrase|psk|preSharedKey)\\s*[:=]\\s*([^\\s,;)}]+)"),
+        Regex("(?i)\\\"(password|passphrase|psk|preSharedKey)\\\"\\s*:\\s*\\\"([^\\\"]*)\\\""),
+    )
 }

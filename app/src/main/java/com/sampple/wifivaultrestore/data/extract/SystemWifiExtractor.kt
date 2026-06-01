@@ -40,12 +40,12 @@ class SystemWifiExtractor(
             privilegedRead.credentials.forEach { credentials.mergeCredential(it) }
         }
 
-        val fileResult = commandRunner.run(WIFI_CONFIG_DUMP_COMMAND)
+        val fileResult = commandRunner.dumpWifiConfigFiles()
         if (fileResult.exitCode != 0 || fileResult.error.isNotBlank()) {
             notes += "System config read failed: ${fileResult.error.ifBlank { "exit ${fileResult.exitCode}" }}"
         }
         val files = extractMarkedFiles(fileResult.output)
-        sourcesChecked += CONFIG_PATHS.size
+        sourcesChecked += CONFIG_PATH_COUNT
         if (files.isEmpty()) {
             notes += "No readable Wi‑Fi config XML files were returned for ${mode.name}."
         } else {
@@ -64,7 +64,7 @@ class SystemWifiExtractor(
             }
         }
 
-        val listNetworks = commandRunner.run("cmd wifi list-networks 2>&1")
+        val listNetworks = commandRunner.listWifiNetworks()
         if (listNetworks.exitCode != 0 || listNetworks.error.isNotBlank()) {
             notes += "cmd wifi list-networks failed: ${listNetworks.error.ifBlank { "exit ${listNetworks.exitCode}" }}"
         }
@@ -139,21 +139,6 @@ class SystemWifiExtractor(
         private const val MARKER_START = "__WVR_FILE_START__"
         private const val MARKER_END = "__WVR_FILE_END__"
 
-        private val CONFIG_PATHS = listOf(
-            "/data/misc/apexdata/com.android.wifi/WifiConfigStore.xml",
-            "/data/misc/apexdata/com.android.wifi/WifiConfigStoreSoftAp.xml",
-            "/data/misc/wifi/WifiConfigStore.xml",
-            "/data/misc/wifi/wpa_supplicant.conf",
-        )
-
-        private val WIFI_CONFIG_DUMP_COMMAND = buildString {
-            append("for p in ")
-            append(CONFIG_PATHS.joinToString(" ") { "'$it'" })
-            append("; do ")
-            append("if [ -r \"\$p\" ]; then ")
-            append("echo $MARKER_START\$p; cat \"\$p\"; echo $MARKER_END\$p; ")
-            append("else echo __WVR_UNREADABLE__\$p; fi; ")
-            append("done")
-        }
+        private const val CONFIG_PATH_COUNT = 4
     }
 }

@@ -29,10 +29,14 @@ object VaultExportCodec {
     private const val CIPHER = "AES/GCM/NoPadding"
     private const val KDF = "PBKDF2WithHmacSHA256"
     private const val ITERATIONS = 210_000
+    private const val MIN_IMPORT_ITERATIONS = 100_000
+    private const val MAX_IMPORT_ITERATIONS = 1_000_000
     private const val KEY_BITS = 256
     private const val SALT_BYTES = 16
     private const val IV_BYTES = 12
     private const val TAG_BITS = 128
+    private const val MAX_ENCRYPTED_BYTES = 8 * 1024 * 1024
+    private const val MAX_GZIP_BYTES = 16 * 1024 * 1024
 
     fun exportGzip(data: VaultData): ByteArray {
         return gzip(portableJson(data).toString(2).toByteArray(Charsets.UTF_8))
@@ -61,6 +65,7 @@ object VaultExportCodec {
     }
 
     fun decodeEncryptedIfPresent(bytes: ByteArray, password: String?): VaultData? {
+        require(bytes.size <= MAX_ENCRYPTED_BYTES) { "Encrypted vault export is too large." }
         val text = bytes.toString(Charsets.UTF_8).trimStart()
         if (!text.startsWith("{")) return null
         val envelope = runCatching { JSONObject(text) }.getOrNull() ?: return null
@@ -69,11 +74,21 @@ object VaultExportCodec {
         if (password.isNullOrBlank()) throw ImportPasswordRequiredException()
 
         val iterations = envelope.optInt("iterations", ITERATIONS)
+        require(iterations in MIN_IMPORT_ITERATIONS..MAX_IMPORT_ITERATIONS) {
+            "Encrypted vault export uses unsupported key-derivation settings."
+        }
+        require(envelope.optString("kdf", KDF) == KDF) { "Encrypted vault export uses an unsupported KDF." }
+        require(envelope.optString("cipher", CIPHER) == CIPHER) { "Encrypted vault export uses an unsupported cipher." }
         val salt = envelope.getString("salt").base64Decode()
         val iv = envelope.getString("iv").base64Decode()
         val cipherText = envelope.getString("cipherText").base64Decode()
+        require(salt.size == SALT_BYTES) { "Encrypted vault export has an invalid salt." }
+        require(iv.size == IV_BYTES) { "Encrypted vault export has an invalid IV." }
+        require(cipherText.isNotEmpty() && cipherText.size <= MAX_ENCRYPTED_BYTES) {
+            "Encrypted vault export payload is invalid."
+        }
         val key = deriveKey(password, salt, iterations)
-        val cipher = Cipher.getInstance(envelope.optString("cipher", CIPHER))
+        val cipher = Cipher.getInstance(CIPHER)
         cipher.init(Cipher.DECRYPT_MODE, key, GCMParameterSpec(TAG_BITS, iv))
         val gzip = cipher.doFinal(cipherText)
         val json = gunzip(gzip).toString(Charsets.UTF_8)
@@ -95,13 +110,29 @@ object VaultExportCodec {
     }
 
     private fun gunzip(bytes: ByteArray): ByteArray {
-        return GZIPInputStream(ByteArrayInputStream(bytes)).use { it.readBytes() }
+        return GZIPInputStream(ByteArrayInputStream(bytes)).use { input ->
+            val output = ByteArrayOutputStream()
+            val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+            var total = 0
+            while (true) {
+                val read = input.read(buffer)
+                if (read <= 0) break
+                total += read
+                require(total <= MAX_GZIP_BYTES) { "Vault export expands beyond the supported size." }
+                output.write(buffer, 0, read)
+            }
+            output.toByteArray()
+        }
     }
 
     private fun deriveKey(password: String, salt: ByteArray, iterations: Int): SecretKeySpec {
         val factory = SecretKeyFactory.getInstance(KDF)
         val spec = PBEKeySpec(password.toCharArray(), salt, iterations, KEY_BITS)
-        return SecretKeySpec(factory.generateSecret(spec).encoded, "AES")
+        return try {
+            SecretKeySpec(factory.generateSecret(spec).encoded, "AES")
+        } finally {
+            spec.clearPassword()
+        }
     }
 
     private fun randomBytes(size: Int): ByteArray {

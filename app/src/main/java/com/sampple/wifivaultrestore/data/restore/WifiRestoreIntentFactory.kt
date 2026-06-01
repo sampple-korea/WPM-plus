@@ -10,7 +10,13 @@ import com.sampple.wifivaultrestore.data.WifiCredential
 
 object WifiRestoreIntentFactory {
     fun buildIntent(credentials: List<WifiCredential>): Intent {
-        val suggestions = credentials.mapNotNull { it.toSuggestionOrNull() }
+        val suggestions = credentials.mapNotNull { credential ->
+            if (RestoreCompatibility.evaluate(credential).supported) {
+                credential.toSuggestionOrNull()
+            } else {
+                null
+            }
+        }
         val bundle = Bundle().apply {
             putParcelableArrayList(
                 Settings.EXTRA_WIFI_NETWORK_LIST,
@@ -21,7 +27,7 @@ object WifiRestoreIntentFactory {
     }
 
     fun WifiCredential.toSuggestionOrNull(): WifiNetworkSuggestion? {
-        if (!canRestore || ssid.isBlank()) return null
+        if (!RestoreCompatibility.evaluate(this).supported) return null
 
         val builder = WifiNetworkSuggestion.Builder()
             .setSsid(ssid)
@@ -35,7 +41,7 @@ object WifiRestoreIntentFactory {
                     builder.setWpa3Passphrase(passwordValue)
                     builder.setCredentialSharedWithUser(true)
                 }
-                security.any { it == SecurityType.WPA2 || it == SecurityType.WPA3 || it == SecurityType.WEP } && !passwordValue.isNullOrBlank() -> {
+                security.any { it == SecurityType.WPA2 || it == SecurityType.WPA3 } && !passwordValue.isNullOrBlank() -> {
                     builder.setWpa2Passphrase(passwordValue)
                     builder.setCredentialSharedWithUser(true)
                 }

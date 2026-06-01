@@ -59,12 +59,20 @@ class ShizukuCommandRunner(private val context: Context) {
         }
     }
 
-    suspend fun run(command: String): ShellCommandResult = withContext(Dispatchers.IO) {
+    suspend fun dumpWifiConfigFiles(): ShellCommandResult = withContext(Dispatchers.IO) {
+        callService { service -> service.dumpWifiConfigFiles() }
+    }
+
+    suspend fun listWifiNetworks(): ShellCommandResult = withContext(Dispatchers.IO) {
+        callService { service -> service.listWifiNetworks() }
+    }
+
+    private suspend fun callService(call: (IShizukuShellService) -> String): ShellCommandResult {
         runCatching {
             withTimeout(SERVICE_TIMEOUT_MILLIS) {
                 val bound = bindService()
                 try {
-                    val raw = bound.service.run(command)
+                    val raw = call(bound.service)
                     val json = JSONObject(raw)
                     ShellCommandResult(
                         exitCode = json.optInt("exitCode", -1),
@@ -92,7 +100,7 @@ class ShizukuCommandRunner(private val context: Context) {
         )
             .daemon(false)
             .tag("wifi-extract-shell")
-            .version(1)
+            .version(2)
             .processNameSuffix("extract")
 
         val connection = object : ServiceConnection {

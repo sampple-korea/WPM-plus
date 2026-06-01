@@ -25,7 +25,11 @@ data class ImportSkip(
 )
 
 object WifiImportParser {
+    private const val MAX_IMPORT_BYTES = 16 * 1024 * 1024
+    private const val MAX_DECOMPRESSED_BYTES = 16 * 1024 * 1024
+
     fun parse(fileName: String?, bytes: ByteArray, password: String? = null): ImportOutcome {
+        require(bytes.size <= MAX_IMPORT_BYTES) { "Import file is too large." }
         VaultExportCodec.decodeEncryptedIfPresent(bytes, password)?.let { vault ->
             return ImportOutcome(vault.credentials.distinctBy { it.id }, emptyList())
         }
@@ -183,7 +187,25 @@ object WifiImportParser {
         val gzip = fileName?.endsWith(".gz", ignoreCase = true) == true ||
             bytes.size >= 2 && bytes[0] == 0x1f.toByte() && bytes[1] == 0x8b.toByte()
         if (!gzip) return bytes
-        return GZIPInputStream(ByteArrayInputStream(bytes)).use { it.readBytes() }
+        return GZIPInputStream(ByteArrayInputStream(bytes)).use { input ->
+            val output = mutableListOf<ByteArray>()
+            val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+            var total = 0
+            while (true) {
+                val read = input.read(buffer)
+                if (read <= 0) break
+                total += read
+                require(total <= MAX_DECOMPRESSED_BYTES) { "Import file expands beyond the supported size." }
+                output += buffer.copyOf(read)
+            }
+            ByteArray(total).also { target ->
+                var offset = 0
+                output.forEach { chunk ->
+                    chunk.copyInto(target, destinationOffset = offset)
+                    offset += chunk.size
+                }
+            }
+        }
     }
 
     private fun parseWifiQrFields(block: String): Map<String, String> {

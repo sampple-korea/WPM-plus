@@ -4,6 +4,8 @@ import android.app.Application
 import android.provider.Settings
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.sampple.wifivaultrestore.data.CredentialSource
+import com.sampple.wifivaultrestore.data.SecurityType
 import com.sampple.wifivaultrestore.data.WifiCredential
 import com.sampple.wifivaultrestore.diagnostics.CrashReporter
 import com.sampple.wifivaultrestore.data.extract.SystemWifiExtractor
@@ -13,6 +15,7 @@ import com.sampple.wifivaultrestore.data.importer.VaultExportCodec
 import com.sampple.wifivaultrestore.data.importer.WifiImportParser
 import com.sampple.wifivaultrestore.data.report.OperationKind
 import com.sampple.wifivaultrestore.data.report.OperationReport
+import com.sampple.wifivaultrestore.data.restore.RestoreCompatibility
 import com.sampple.wifivaultrestore.data.restore.RestoreSession
 import com.sampple.wifivaultrestore.data.security.WifiVaultRepository
 import com.sampple.wifivaultrestore.shizuku.ShizukuCommandRunner
@@ -141,6 +144,33 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         importBytes("pasted-wifi-qr.txt", text.toByteArray(Charsets.UTF_8))
     }
 
+    fun saveManualCredential(
+        ssid: String,
+        security: SecurityType,
+        password: String?,
+        hidden: Boolean,
+        note: String?,
+    ) {
+        viewModelScope.launch {
+            _state.update { it.copy(busy = true) }
+            runCatching {
+                val credential = WifiCredential.create(
+                    ssid = ssid.trim(),
+                    security = setOf(security),
+                    password = password?.takeIf { it.isNotBlank() },
+                    hidden = hidden,
+                    note = note,
+                    source = CredentialSource.Manual,
+                )
+                repository.upsertCredentials(listOf(credential))
+            }.onSuccess { vault ->
+                _state.update { it.copy(vault = vault, busy = false, message = "Network saved.") }
+            }.onFailure { error ->
+                _state.update { it.copy(busy = false, message = error.message ?: "Could not save network.") }
+            }
+        }
+    }
+
     fun updateNote(credentialId: String, note: String?) {
         viewModelScope.launch {
             runCatching { repository.updateNote(credentialId, note) }
@@ -204,10 +234,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun startRestore(credentials: List<WifiCredential> = state.value.vault.credentials) {
-        val restorable = credentials.filter { it.canRestore }
-        val skipped = credentials.size - restorable.size
+        val plan = RestoreCompatibility.plan(credentials)
+        val restorable = plan.supportedCredentials
+        val skipped = plan.skipped.size
         _state.update {
             it.copy(
+                restorePlan = plan,
                 restoreSession = RestoreSession(
                     id = UUID.randomUUID().toString(),
                     queue = restorable,
@@ -220,11 +252,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun onRestoreBatchResult(results: List<Int>?) {
         val current = state.value.restoreSession ?: return
+        val batchSize = current.activeBatch?.items?.size ?: 0
         var success = 0
         var alreadyExists = 0
         var failed = 0
         if (results == null) {
-            failed = current.activeBatch?.items?.size ?: 0
+            failed = batchSize
         } else {
             results.forEach { result ->
                 when (result) {
@@ -233,6 +266,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     else -> failed++
                 }
             }
+            failed += (batchSize - results.size).coerceAtLeast(0)
         }
 
         val updated = current.completeActiveBatch(success, alreadyExists, failed).nextBatch()
