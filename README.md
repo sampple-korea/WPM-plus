@@ -18,7 +18,7 @@ The project is built as a commercial-grade MVP:
 - Restore/import/extract reports with redacted password handling
 - Material 3 Jetpack Compose UI
 - English, Korean, Japanese, and Spanish resources
-- GitHub Actions CI for unit tests, lint, debug APKs, and release app bundles
+- GitHub Actions CI for unit tests, lint, debug APKs, and signed release APKs
 
 ## Android Reality Check
 
@@ -68,7 +68,7 @@ This repository is in active MVP development. Implemented so far:
 - Vault search/filter, edit/delete lifecycle, notes, reveal/copy/share overflow controls, and redacted crash-report copy dialog
 - Restore selection review with per-network eligibility and skip reasons
 - Batch restore session model and UI wiring
-- GitHub Actions build workflow with debug APK and release AAB lanes
+- GitHub Actions build workflow with debug APK and signed release APK lanes
 
 Remaining hardening work:
 
@@ -82,19 +82,17 @@ Remaining hardening work:
 ./gradlew testDebugUnitTest
 ./gradlew lintDebug
 ./gradlew assembleDebug
-./gradlew bundleRelease
+./gradlew assembleRelease
 ```
 
 The repo intentionally avoids storing real Wi-Fi passwords in fixtures, logs, or reports.
 
-GitHub Actions debug APKs are signed with a repository secret-backed CI debug key so the APK signing certificate stays stable across main-branch builds. Main-branch release bundles require `WPM_PLUS_RELEASE_*` upload-key secrets and are built through `bundleRelease` for Play App Signing. Local builds keep using the normal Android debug keystore unless signing environment variables are provided.
+GitHub Actions debug APKs are signed with a repository secret-backed CI debug key so the APK signing certificate stays stable across main-branch builds. Main-branch release APKs require `WPM_PLUS_RELEASE_*` signing secrets and are built through `assembleRelease`. Local builds keep using the normal Android debug keystore unless signing environment variables are provided.
 
 ## Store And Privacy Materials
 
 - Privacy policy draft: [docs/privacy-policy.md](docs/privacy-policy.md)
 - Google Play Data safety draft: [docs/play-data-safety.md](docs/play-data-safety.md)
-- Android App Bundle upload guidance: https://developer.android.com/studio/publish/upload-bundle
-- Play App Signing guidance: https://support.google.com/googleplay/android-developer/answer/9842756
 
 ## Security Principles
 

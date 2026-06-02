@@ -37,10 +37,10 @@ jobs:
           echo "WPM_PLUS_DEBUG_KEYSTORE_BASE64, WPM_PLUS_DEBUG_STORE_PASSWORD, and WPM_PLUS_DEBUG_KEY_PASSWORD are required so debug APK signatures stay stable." >&2
           exit 1
 
-      - name: Require release upload signing on main builds
+      - name: Require release APK signing on main builds
         if: github.event_name == 'push' && (env.WPM_PLUS_RELEASE_KEYSTORE_BASE64 == '' || env.WPM_PLUS_RELEASE_STORE_PASSWORD == '' || env.WPM_PLUS_RELEASE_KEY_ALIAS == '' || env.WPM_PLUS_RELEASE_KEY_PASSWORD == '')
         run: |
-          echo "WPM_PLUS_RELEASE_KEYSTORE_BASE64, WPM_PLUS_RELEASE_STORE_PASSWORD, WPM_PLUS_RELEASE_KEY_ALIAS, and WPM_PLUS_RELEASE_KEY_PASSWORD are required so main builds produce a Play-ready signed app bundle." >&2
+          echo "WPM_PLUS_RELEASE_KEYSTORE_BASE64, WPM_PLUS_RELEASE_STORE_PASSWORD, WPM_PLUS_RELEASE_KEY_ALIAS, and WPM_PLUS_RELEASE_KEY_PASSWORD are required so main builds produce a signed release APK." >&2
           exit 1
 
       - name: Restore stable debug signing key
@@ -70,26 +70,19 @@ jobs:
       - name: Assemble debug APK
         run: ./gradlew assembleDebug
 
-      - name: Bundle release AAB
-        run: ./gradlew bundleRelease
+      - name: Assemble release APK
+        run: ./gradlew assembleRelease
 
       - name: Verify debug APK signer
         run: |
           BUILD_TOOLS_VERSION="$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -n1)"
           "$ANDROID_HOME/build-tools/$BUILD_TOOLS_VERSION/apksigner" verify --print-certs app/build/outputs/apk/debug/app-debug.apk
 
-      - name: Verify release AAB signer
+      - name: Verify release APK signer
         if: env.WPM_PLUS_RELEASE_KEYSTORE_BASE64 != ''
         run: |
-          jarsigner -verify -certs -verbose app/build/outputs/bundle/release/app-release.aab | tee /tmp/wpm-plus-aab-signature.txt
-          if grep -qi "jar is unsigned" /tmp/wpm-plus-aab-signature.txt; then
-            echo "Release AAB is unsigned." >&2
-            exit 1
-          fi
-          if ! grep -q ">>> Signer" /tmp/wpm-plus-aab-signature.txt; then
-            echo "Release AAB signer was not found." >&2
-            exit 1
-          fi
+          BUILD_TOOLS_VERSION="$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -n1)"
+          "$ANDROID_HOME/build-tools/$BUILD_TOOLS_VERSION/apksigner" verify --print-certs app/build/outputs/apk/release/app-release.apk
 
       - name: Upload debug APK
         uses: actions/upload-artifact@v5
@@ -97,9 +90,9 @@ jobs:
           name: wpm-plus-debug
           path: app/build/outputs/apk/debug/app-debug.apk
 
-      - name: Upload release AAB
+      - name: Upload release APK
         if: env.WPM_PLUS_RELEASE_KEYSTORE_BASE64 != ''
         uses: actions/upload-artifact@v5
         with:
-          name: wpm-plus-release-aab
-          path: app/build/outputs/bundle/release/app-release.aab
+          name: wpm-plus-release-apk
+          path: app/build/outputs/apk/release/app-release.apk

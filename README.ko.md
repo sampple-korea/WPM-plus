@@ -19,7 +19,7 @@ WPM+는 최신 Android 보안 정책 안에서 Wi‑Fi 자격 증명을 백업, 
 - 비밀번호 값을 로그와 리포트에 남기지 않는 redaction 정책
 - Material 3 Jetpack Compose UI
 - 영어, 한국어, 일본어, 스페인어 리소스
-- GitHub Actions 기반 단위 테스트, lint, debug APK, release app bundle 빌드
+- GitHub Actions 기반 단위 테스트, lint, debug APK, 서명된 release APK 빌드
 
 ## Android 제약
 
@@ -69,7 +69,7 @@ Shizuku 문서:
 - 금고 검색/필터, 수정/삭제 생명주기, 메모, 보기/복사/공유 overflow 컨트롤, redaction 적용 크래시 리포트 복사 다이얼로그
 - 네트워크별 복원 가능 여부와 건너뜀 사유를 보여주는 복원 선택 검토
 - 5개 단위 복원 세션 모델과 UI 연결
-- debug APK와 release AAB lane을 포함한 GitHub Actions 빌드 워크플로
+- debug APK와 서명된 release APK lane을 포함한 GitHub Actions 빌드 워크플로
 
 남은 하드닝 작업:
 
@@ -83,19 +83,17 @@ Shizuku 문서:
 ./gradlew testDebugUnitTest
 ./gradlew lintDebug
 ./gradlew assembleDebug
-./gradlew bundleRelease
+./gradlew assembleRelease
 ```
 
 이 저장소는 실제 Wi‑Fi 비밀번호를 fixture, 로그, 리포트에 저장하지 않는 것을 원칙으로 합니다.
 
-GitHub Actions debug APK는 저장소 secret에 보관된 CI debug 키로 서명합니다. 그래서 main 브랜치 빌드마다 APK 서명 인증서가 유지됩니다. main 브랜치 release bundle은 `WPM_PLUS_RELEASE_*` upload key secret을 요구하며 Play App Signing용 `bundleRelease` 경로로 빌드합니다. 로컬 빌드는 서명 환경 변수를 직접 제공하지 않는 한 Android 기본 debug keystore를 계속 사용합니다.
+GitHub Actions debug APK는 저장소 secret에 보관된 CI debug 키로 서명합니다. 그래서 main 브랜치 빌드마다 APK 서명 인증서가 유지됩니다. main 브랜치 release APK는 `WPM_PLUS_RELEASE_*` 서명 secret을 요구하며 `assembleRelease` 경로로 빌드합니다. 로컬 빌드는 서명 환경 변수를 직접 제공하지 않는 한 Android 기본 debug keystore를 계속 사용합니다.
 
 ## 스토어 및 개인정보 자료
 
 - 개인정보처리방침 초안: [docs/privacy-policy.md](docs/privacy-policy.md)
 - Google Play Data safety 초안: [docs/play-data-safety.md](docs/play-data-safety.md)
-- Android App Bundle 업로드 안내: https://developer.android.com/studio/publish/upload-bundle
-- Play App Signing 안내: https://support.google.com/googleplay/android-developer/answer/9842756
 
 ## 보안 원칙
 
