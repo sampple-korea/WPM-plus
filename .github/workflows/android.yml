@@ -79,14 +79,14 @@ jobs:
           "$ANDROID_HOME/build-tools/$BUILD_TOOLS_VERSION/apksigner" verify --print-certs app/build/outputs/apk/release/app-release.apk
 
       - name: Upload debug APK
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: wpm-plus-debug
           path: app/build/outputs/apk/debug/app-debug.apk
 
       - name: Upload release APK
         if: env.WPM_PLUS_RELEASE_KEYSTORE_BASE64 != ''
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: wpm-plus-release-apk
           path: app/build/outputs/apk/release/app-release.apk
