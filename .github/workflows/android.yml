@@ -37,12 +37,6 @@ jobs:
           echo "WPM_PLUS_DEBUG_KEYSTORE_BASE64, WPM_PLUS_DEBUG_STORE_PASSWORD, and WPM_PLUS_DEBUG_KEY_PASSWORD are required so debug APK signatures stay stable." >&2
           exit 1
 
-      - name: Require release APK signing on main builds
-        if: github.event_name == 'push' && (env.WPM_PLUS_RELEASE_KEYSTORE_BASE64 == '' || env.WPM_PLUS_RELEASE_STORE_PASSWORD == '' || env.WPM_PLUS_RELEASE_KEY_ALIAS == '' || env.WPM_PLUS_RELEASE_KEY_PASSWORD == '')
-        run: |
-          echo "WPM_PLUS_RELEASE_KEYSTORE_BASE64, WPM_PLUS_RELEASE_STORE_PASSWORD, WPM_PLUS_RELEASE_KEY_ALIAS, and WPM_PLUS_RELEASE_KEY_PASSWORD are required so main builds produce a signed release APK." >&2
-          exit 1
-
       - name: Restore stable debug signing key
         if: env.WPM_PLUS_DEBUG_KEYSTORE_BASE64 != ''
         run: |

@@ -88,7 +88,7 @@ Shizuku 문서:
 
 이 저장소는 실제 Wi‑Fi 비밀번호를 fixture, 로그, 리포트에 저장하지 않는 것을 원칙으로 합니다.
 
-GitHub Actions debug APK는 저장소 secret에 보관된 CI debug 키로 서명합니다. 그래서 main 브랜치 빌드마다 APK 서명 인증서가 유지됩니다. main 브랜치 release APK는 `WPM_PLUS_RELEASE_*` 서명 secret을 요구하며 `assembleRelease` 경로로 빌드합니다. 로컬 빌드는 서명 환경 변수를 직접 제공하지 않는 한 Android 기본 debug keystore를 계속 사용합니다.
+GitHub Actions debug APK는 저장소 secret에 보관된 CI debug 키로 서명합니다. 그래서 main 브랜치 빌드마다 APK 서명 인증서가 유지됩니다. release APK는 `assembleRelease` 경로로 빌드하며, `WPM_PLUS_RELEASE_*` 서명 secret이 있을 때 CI가 서명 검증 후 release APK를 업로드합니다. 로컬 빌드는 서명 환경 변수를 직접 제공하지 않는 한 Android 기본 debug keystore를 계속 사용합니다.
 
 ## 스토어 및 개인정보 자료
 

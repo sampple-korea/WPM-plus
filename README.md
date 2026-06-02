@@ -87,7 +87,7 @@ Remaining hardening work:
 
 The repo intentionally avoids storing real Wi-Fi passwords in fixtures, logs, or reports.
 
-GitHub Actions debug APKs are signed with a repository secret-backed CI debug key so the APK signing certificate stays stable across main-branch builds. Main-branch release APKs require `WPM_PLUS_RELEASE_*` signing secrets and are built through `assembleRelease`. Local builds keep using the normal Android debug keystore unless signing environment variables are provided.
+GitHub Actions debug APKs are signed with a repository secret-backed CI debug key so the APK signing certificate stays stable across main-branch builds. Release APKs are built through `assembleRelease`; when `WPM_PLUS_RELEASE_*` signing secrets are present, CI verifies and uploads the signed release APK. Local builds keep using the normal Android debug keystore unless signing environment variables are provided.
 
 ## Store And Privacy Materials
 
